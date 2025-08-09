@@ -230,10 +230,8 @@ struct ContentView: View {
                 ForEach(pageApps) { app in
                     AppIconView(app: app)
                         .onTapGesture {
-                            launchApp(app)
-                            // 启动应用后延迟关闭 Launchpad
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                animateAndClose()
+                            animateAndClose {
+                                launchApp(app)
                             }
                         }
                         .onDrag {
@@ -328,10 +326,11 @@ struct ContentView: View {
         }
     }
     
-    private func animateAndClose() {
+    private func animateAndClose(success: (()->Void)? = nil) {
         isClosing = true
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            success?()
             windowManager.closeWindow()
         }
     }
