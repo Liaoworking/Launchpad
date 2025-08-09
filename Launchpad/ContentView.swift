@@ -220,7 +220,7 @@ struct ContentView: View {
         
         let appsPerPage = gridColumns * 6 // 每页6行
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
-        var items = Array(0..<totalPages)
+        let items = Array(0..<totalPages)
 
         return Pager(page: page,
                      data: items,
@@ -228,28 +228,31 @@ struct ContentView: View {
             let startIndex = pageIndex * appsPerPage
             let endIndex = min(startIndex + appsPerPage, filteredApps.count)
             let pageApps = Array(filteredApps[startIndex..<endIndex])
-            
-            LazyVGrid(columns: columns, spacing: 30) {
-                ForEach(pageApps) { app in
-                    AppIconView(app: app)
-                        .onTapGesture {
-                            animateAndClose {
-                                launchApp(app)
+            VStack(content: {
+                LazyVGrid(columns: columns, spacing: 30) {
+                    ForEach(pageApps) { app in
+                        AppIconView(app: app)
+                            .onTapGesture {
+                                animateAndClose {
+                                    launchApp(app)
+                                }
                             }
-                        }
-                        .onDrag {
-                            draggedApp = app
-                            return NSItemProvider(object: app.name as NSString)
-                        }
-                        .onDrop(of: [.text], delegate: DropViewDelegate(
-                            item: app,
-                            appsOrder: $appsOrder,
-                            draggedApp: $draggedApp
-                        ))
-                        .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+                            .onDrag {
+                                draggedApp = app
+                                return NSItemProvider(object: app.name as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: DropViewDelegate(
+                                item: app,
+                                appsOrder: $appsOrder,
+                                draggedApp: $draggedApp
+                            ))
+                            .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+                    }
                 }
-            }.background {
+                Spacer()
+            })
+            .background {
                 Color.black.opacity(0.001)
             }
         }.allowsKeyboardControl(false)
@@ -259,7 +262,7 @@ struct ContentView: View {
         let appsPerPage = gridColumns * 6
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
         
-        return HStack(spacing: 8) {
+        return HStack(spacing: 0) {
             ForEach(0..<totalPages, id: \.self) { pageIndex in
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -267,11 +270,19 @@ struct ContentView: View {
                         currentPage = pageIndex
                     }
                 }) {
-                    Circle()
-                        .fill(currentPage == pageIndex ? Color.white : Color.white.opacity(0.3))
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(currentPage == pageIndex ? 1.2 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: currentPage)
+                    ZStack {
+                        // 透明的点击区域 - 扩大点击热区
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 24, height: 24)
+                        
+                        // 实际的圆点 - 保持视觉大小不变
+                        Circle()
+                            .fill(currentPage == pageIndex ? Color.white : Color.white.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(currentPage == pageIndex ? 1.2 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: currentPage)
+                    }
                 }
                 .buttonStyle(PlainButtonStyle())
             }
