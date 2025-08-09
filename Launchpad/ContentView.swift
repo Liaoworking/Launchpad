@@ -367,7 +367,7 @@ struct AppIconView: View {
                     )
                     .frame(width: 80, height: 80)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 30)
                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
                     .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
@@ -375,8 +375,8 @@ struct AppIconView: View {
                 if let appIcon = appIcon {
                     Image(nsImage: appIcon)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 64, height: 64)
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 100, height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     Image(systemName: app.icon)
