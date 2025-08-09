@@ -215,50 +215,45 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+    @StateObject var page: Page = .first()
+
     private var pagedAppGrid: some View {
+        
         let appsPerPage = gridColumns * 6 // 每页6行
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
-        
-        return GeometryReader { geometry in
-            HStack(spacing: 0) {
-                ForEach(0..<totalPages, id: \.self) { pageIndex in
-                    let startIndex = pageIndex * appsPerPage
-                    let endIndex = min(startIndex + appsPerPage, filteredApps.count)
-                    let pageApps = Array(filteredApps[startIndex..<endIndex])
-                    
-                    VStack {
-                        LazyVGrid(columns: columns, spacing: 30) {
-                            ForEach(pageApps) { app in
-                                AppIconView(app: app)
-                                    .onTapGesture {
-                                        animateAndClose {
-                                            launchApp(app)
-                                        }
-                                    }
-                                    .onDrag {
-                                        draggedApp = app
-                                        return NSItemProvider(object: app.name as NSString)
-                                    }
-                                    .onDrop(of: [.text], delegate: DropViewDelegate(
-                                        item: app,
-                                        appsOrder: $appsOrder,
-                                        draggedApp: $draggedApp
-                                    ))
-                                    .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
-                                    .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+        var items = Array(0..<totalPages)
+
+        return Pager(page: page,
+                     data: items,
+                     id: \.self) { pageIndex in
+            let startIndex = pageIndex * appsPerPage
+            let endIndex = min(startIndex + appsPerPage, filteredApps.count)
+            let pageApps = Array(filteredApps[startIndex..<endIndex])
+            
+            LazyVGrid(columns: columns, spacing: 30) {
+                ForEach(pageApps) { app in
+                    AppIconView(app: app)
+                        .onTapGesture {
+                            animateAndClose {
+                                launchApp(app)
                             }
                         }
-                        .padding(.horizontal, 20)
-                        
-                        Spacer()
-                    }
-                    .frame(width: geometry.size.width)
+                        .onDrag {
+                            draggedApp = app
+                            return NSItemProvider(object: app.name as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: DropViewDelegate(
+                            item: app,
+                            appsOrder: $appsOrder,
+                            draggedApp: $draggedApp
+                        ))
+                        .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
                 }
+            }.background {
+                Color.black.opacity(0.001)
             }
-            .offset(x: -CGFloat(currentPage) * geometry.size.width)
-            .animation(.easeInOut(duration: 0.3), value: currentPage)
-        }
+        }.allowsKeyboardControl(false)
     }
     
     private var pageIndicator: some View {
