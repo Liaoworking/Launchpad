@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var draggedApp: AppItem?
     @State private var showingSettings = false
     @State private var isClosing = false
-
+    @State private var currentPage = 0
     @AppStorage("gridColumns") private var gridColumns = 8
     
     private let categories = ["All", "Utilities", "Productivity", "Entertainment", "Development", "System"]
@@ -90,7 +90,12 @@ struct ContentView: View {
                 if appManager.isLoading {
                     loadingView
                 } else {
-                    appGrid
+                    pagedAppGrid
+                }
+                
+                // 页面指示器
+                if !appManager.isLoading && !filteredApps.isEmpty {
+                    pageIndicator
                 }
                 
 
@@ -207,16 +212,63 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private var appGrid: some View {
-        ScrollView {
-            DraggableAppGrid(
-                apps: filteredApps,
-                columns: columns,
-                onAppTap: launchApp,
-                draggedApp: $draggedApp,
-                appsOrder: $appsOrder
-            )
+    private var pagedAppGrid: some View {
+        let appsPerPage = gridColumns * 6 // 每页6行
+        let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
+        
+        return VStack {
+            // 当前页面内容
+            let startIndex = currentPage * appsPerPage
+            let endIndex = min(startIndex + appsPerPage, filteredApps.count)
+            let pageApps = Array(filteredApps[startIndex..<endIndex])
+            
+            LazyVGrid(columns: columns, spacing: 30) {
+                ForEach(pageApps) { app in
+                    AppIconView(app: app)
+                        .onTapGesture {
+                            launchApp(app)
+                        }
+                        .onDrag {
+                            draggedApp = app
+                            return NSItemProvider(object: app.name as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: DropViewDelegate(
+                            item: app,
+                            appsOrder: $appsOrder,
+                            draggedApp: $draggedApp
+                        ))
+                        .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
         }
+        .animation(.easeInOut(duration: 0.3), value: currentPage)
+    }
+    
+    private var pageIndicator: some View {
+        let appsPerPage = gridColumns * 6
+        let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
+        
+        return HStack(spacing: 8) {
+            ForEach(0..<totalPages, id: \.self) { pageIndex in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        currentPage = pageIndex
+                    }
+                }) {
+                    Circle()
+                        .fill(currentPage == pageIndex ? Color.white : Color.white.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(currentPage == pageIndex ? 1.2 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: currentPage)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.bottom, 40)
     }
     
 
@@ -231,6 +283,9 @@ struct ContentView: View {
                 app.category == selectedCategory
             return matchesSearch && matchesCategory
         }
+        
+        // 重置到第一页
+        currentPage = 0
     }
     
     private func launchApp(_ app: AppItem) {
@@ -241,6 +296,24 @@ struct ContentView: View {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 { // ESC key
                 animateAndClose()
+                return nil
+            } else if event.keyCode == 123 { // Left arrow key
+                let appsPerPage = self.gridColumns * 6
+                let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
+                if self.currentPage > 0 {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        self.currentPage -= 1
+                    }
+                }
+                return nil
+            } else if event.keyCode == 124 { // Right arrow key
+                let appsPerPage = self.gridColumns * 6
+                let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
+                if self.currentPage < totalPages - 1 {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        self.currentPage += 1
+                    }
+                }
                 return nil
             }
             return event
