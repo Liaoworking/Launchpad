@@ -216,7 +216,6 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     @StateObject var page: Page = .first()
-
     private var pagedAppGrid: some View {
         
         let appsPerPage = gridColumns * 6 // 每页6行
@@ -264,6 +263,7 @@ struct ContentView: View {
             ForEach(0..<totalPages, id: \.self) { pageIndex in
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.3)) {
+                        page.update(.new(index: pageIndex))
                         currentPage = pageIndex
                     }
                 }) {
