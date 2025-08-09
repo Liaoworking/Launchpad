@@ -111,6 +111,10 @@ struct ContentView: View {
         .scaleEffect(isClosing ? 0.8 : 1.0)
         .opacity(isClosing ? 0.0 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: isClosing)
+        .onTapGesture {
+            // 点击背景空白区域关闭窗口
+            animateAndClose()
+        }
         .onAppear {
             appManager.loadInstalledApps()
             setupKeyboardListener()
@@ -227,6 +231,10 @@ struct ContentView: View {
                     AppIconView(app: app)
                         .onTapGesture {
                             launchApp(app)
+                            // 启动应用后延迟关闭 Launchpad
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                animateAndClose()
+                            }
                         }
                         .onDrag {
                             draggedApp = app
@@ -360,11 +368,11 @@ struct AppIconView: View {
                     Image(nsImage: appIcon)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     Image(systemName: app.icon)
-                        .font(.system(size: 32))
+                        .font(.system(size: 40))
                         .foregroundColor(.white)
                 }
             }

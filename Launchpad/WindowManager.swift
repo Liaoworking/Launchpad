@@ -28,9 +28,10 @@ class WindowManager: ObservableObject {
             window.backgroundColor = NSColor.clear
             window.hasShadow = false
             
-            // 设置窗口样式
+            // 设置窗口样式 - 移除 fullSizeContentView 以确保事件处理正常
             window.styleMask = [.borderless, .fullSizeContentView]
-            
+//            window.styleMask = [.borderless]
+
             // 设置窗口大小为全屏（包括 MenuBar 区域）
             if let screen = NSScreen.main {
                 window.setFrame(screen.frame, display: true)
