@@ -1,0 +1,284 @@
+//
+//  ContentView.swift
+//  Launchpad
+//
+//  Created by liao on 2025/8/9.
+//
+
+import SwiftUI
+import AppKit
+
+struct ContentView: View {
+    @StateObject private var appManager = AppManager.shared
+    @State private var searchText = ""
+    @State private var selectedCategory = "All"
+    @State private var filteredApps: [AppItem] = []
+    @State private var appsOrder: [AppItem] = []
+    @State private var draggedApp: AppItem?
+    @State private var showingSettings = false
+    @AppStorage("gridColumns") private var gridColumns = 8
+    
+    private let categories = ["All", "Utilities", "Productivity", "Entertainment", "Development", "System"]
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 20), count: gridColumns)
+    }
+    
+    var body: some View {
+        ZStack {
+            // 背景渐变
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.1, green: 0.1, blue: 0.15),
+                    Color(red: 0.05, green: 0.05, blue: 0.1)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // 顶部工具栏
+                HStack {
+                    // 顶部搜索栏
+                    searchBar
+                    
+                    // 设置按钮
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                // 分类选择器
+                categorySelector
+                
+                // 应用网格
+                if appManager.isLoading {
+                    loadingView
+                } else {
+                    appGrid
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal, 40)
+            .padding(.top, 20)
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+            }
+        }
+        .onAppear {
+            appManager.loadInstalledApps()
+        }
+        .onChange(of: searchText) { _ in
+            filterApps()
+        }
+        .onChange(of: selectedCategory) { _ in
+            filterApps()
+        }
+        .onChange(of: appManager.installedApps) { _ in
+            filterApps()
+        }
+        .onChange(of: filteredApps) { newApps in
+            if appsOrder.isEmpty || appsOrder.count != newApps.count {
+                appsOrder = newApps
+            }
+        }
+    }
+    
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.gray)
+                .font(.system(size: 16))
+            
+            TextField("Search apps...", text: $searchText)
+                .textFieldStyle(PlainTextFieldStyle())
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+            
+            if !searchText.isEmpty {
+                Button(action: {
+                    searchText = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .padding(.bottom, 20)
+    }
+    
+    private var categorySelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(categories, id: \.self) { category in
+                    Button(action: {
+                        selectedCategory = category
+                    }) {
+                        Text(category)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(selectedCategory == category ? .white : .gray)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(selectedCategory == category ? 
+                                          Color.blue.opacity(0.3) : 
+                                          Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(selectedCategory == category ? 
+                                                   Color.blue.opacity(0.5) : 
+                                                   Color.gray.opacity(0.3), 
+                                                   lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+        .padding(.bottom, 30)
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+            
+            Text("Loading applications...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var appGrid: some View {
+        ScrollView {
+            DraggableAppGrid(
+                apps: filteredApps,
+                columns: columns,
+                onAppTap: launchApp,
+                draggedApp: $draggedApp,
+                appsOrder: $appsOrder
+            )
+        }
+    }
+    
+
+    
+    private func filterApps() {
+        filteredApps = appManager.installedApps.filter { app in
+            let matchesSearch = searchText.isEmpty || 
+                app.name.localizedCaseInsensitiveContains(searchText)
+            let matchesCategory = selectedCategory == "All" || 
+                app.category == selectedCategory
+            return matchesSearch && matchesCategory
+        }
+    }
+    
+    private func launchApp(_ app: AppItem) {
+        appManager.launchApp(app)
+    }
+}
+
+struct AppIconView: View {
+    let app: AppItem
+    @State private var isHovered = false
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // 应用图标
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.3, green: 0.3, blue: 0.4),
+                                Color(red: 0.2, green: 0.2, blue: 0.3)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                
+                Image(systemName: app.icon)
+                    .font(.system(size: 32))
+                    .foregroundColor(.white)
+            }
+            .scaleEffect(isHovered ? 1.1 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            
+            // 应用名称
+            Text(app.name)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(width: 80)
+        }
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+struct AppItem: Identifiable, Equatable {
+    let id = UUID()
+    let name: String
+    let icon: String
+    let category: String
+    let bundleIdentifier: String
+    let path: String?
+    
+    init(name: String, icon: String, category: String, bundleIdentifier: String = "", path: String? = nil) {
+        self.id = UUID()
+        self.name = name
+        self.icon = icon
+        self.category = category
+        self.bundleIdentifier = bundleIdentifier
+        self.path = path
+    }
+}
+    static func == (lhs: AppItem, rhs: AppItem) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+
+#Preview {
+    ContentView()
+}
+    static func == (lhs: AppItem, rhs: AppItem) -> Bool {
