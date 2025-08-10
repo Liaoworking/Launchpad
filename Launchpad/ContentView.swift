@@ -384,30 +384,29 @@ struct AppIconView: View {
         VStack(spacing: 8) {
             // 应用图标
             ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.3, green: 0.3, blue: 0.4),
-                                Color(red: 0.2, green: 0.2, blue: 0.3)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 30)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+//                RoundedRectangle(cornerRadius: 16)
+//                    .fill(
+//                        LinearGradient(
+//                            gradient: Gradient(colors: [
+//                                Color(red: 0.3, green: 0.3, blue: 0.4),
+//                                Color(red: 0.2, green: 0.2, blue: 0.3)
+//                            ]),
+//                            startPoint: .topLeading,
+//                            endPoint: .bottomTrailing
+//                        )
+//                    )
+//                    .frame(width: 75, height: 75)
+//                    .overlay(
+//                        RoundedRectangle(cornerRadius: 30)
+//                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+//                    )
+//                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 
                 if let appIcon = appIcon {
                     Image(nsImage: appIcon)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     Image(systemName: app.icon)
                         .font(.system(size: 40))
@@ -423,6 +422,7 @@ struct AppIconView: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .shadow(radius: 2)
                 .frame(width: 80)
         }
         .onHover { hovering in
