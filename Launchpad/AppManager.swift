@@ -15,9 +15,71 @@ class AppManager: ObservableObject {
     
     static let shared = AppManager()
     
-    private init() {}
+    private init() {
+        // 初始化时尝试加载缓存
+        loadCachedApps()
+    }
+    
+    // MARK: - 缓存管理
+    private let cacheKey = "CachedInstalledApps"
+    private let cacheExpirationKey = "CacheExpirationDate"
+    private let cacheExpirationInterval: TimeInterval = 3600 // 1小时缓存过期
+    
+    private func loadCachedApps() {
+        if let cachedData = UserDefaults.standard.data(forKey: cacheKey),
+           let cachedApps = try? JSONDecoder().decode([AppItem].self, from: cachedData) {
+            // 检查缓存是否过期
+            let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date ?? Date.distantPast
+            if Date().timeIntervalSince(expirationDate) < cacheExpirationInterval {
+                // 缓存未过期，直接使用
+                DispatchQueue.main.async {
+                    self.installedApps = cachedApps
+                }
+                return
+            }
+        }
+        
+        // 没有缓存或缓存过期，立即加载
+        loadInstalledApps()
+    }
+    
+    private func saveAppsToCache(_ apps: [AppItem]) {
+        if let encodedData = try? JSONEncoder().encode(apps) {
+            UserDefaults.standard.set(encodedData, forKey: cacheKey)
+            UserDefaults.standard.set(Date(), forKey: cacheExpirationKey)
+        }
+    }
     
     func loadInstalledApps() {
+        // 如果有缓存数据，先显示缓存
+        if !installedApps.isEmpty {
+            // 后台刷新，不显示loading状态
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let apps = self?.scanInstalledApps() ?? []
+                
+                DispatchQueue.main.async {
+                    self?.installedApps = apps
+                    self?.saveAppsToCache(apps)
+                }
+            }
+        } else {
+            // 没有缓存数据，显示loading状态
+            isLoading = true
+            
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let apps = self?.scanInstalledApps() ?? []
+                
+                DispatchQueue.main.async {
+                    self?.installedApps = apps
+                    self?.isLoading = false
+                    self?.saveAppsToCache(apps)
+                }
+            }
+        }
+    }
+    
+    // 强制刷新（清除缓存）
+    func forceRefreshApps() {
         isLoading = true
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -26,6 +88,7 @@ class AppManager: ObservableObject {
             DispatchQueue.main.async {
                 self?.installedApps = apps
                 self?.isLoading = false
+                self?.saveAppsToCache(apps)
             }
         }
     }

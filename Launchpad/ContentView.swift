@@ -125,7 +125,7 @@ struct ContentView: View {
             animateAndClose()
         }
         .onAppear {
-            appManager.loadInstalledApps()
+            // 应用管理器会在初始化时自动加载缓存，这里只需要设置键盘监听器
             setupKeyboardListener()
             NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { event in
                 if previousDeltaX == 0 && event.deltaX != 0 {
@@ -436,8 +436,18 @@ struct AppIconView: View {
     private func loadAppIcon() {
         guard let path = app.path else { return }
         
+        // 先尝试从缓存加载
+        if let cachedIcon = IconCache.shared.getIcon(for: path) {
+            self.appIcon = cachedIcon
+            return
+        }
+        
+        // 缓存中没有，异步加载
         DispatchQueue.global(qos: .userInitiated).async {
             let icon = NSWorkspace.shared.icon(forFile: path)
+            
+            // 保存到缓存
+            IconCache.shared.setIcon(icon, for: path)
             
             DispatchQueue.main.async {
                 self.appIcon = icon
@@ -446,7 +456,31 @@ struct AppIconView: View {
     }
 }
 
-struct AppItem: Identifiable, Equatable {
+// MARK: - 图标缓存管理器
+class IconCache {
+    static let shared = IconCache()
+    private let cache = NSCache<NSString, NSImage>()
+    private let fileManager = FileManager.default
+    
+    private init() {
+        cache.countLimit = 200 // 最多缓存200个图标
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB内存限制
+    }
+    
+    func getIcon(for path: String) -> NSImage? {
+        return cache.object(forKey: path as NSString)
+    }
+    
+    func setIcon(_ icon: NSImage, for path: String) {
+        cache.setObject(icon, forKey: path as NSString)
+    }
+    
+    func clearCache() {
+        cache.removeAllObjects()
+    }
+}
+
+struct AppItem: Identifiable, Equatable, Codable {
     let id = UUID()
     let name: String
     let icon: String
