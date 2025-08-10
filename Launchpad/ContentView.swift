@@ -15,7 +15,7 @@ struct ContentView: View {
     @State private var selectedCategory = "All"
     @State private var filteredApps: [AppItem] = [] {
         didSet {
-            let appsPerPage = gridColumns * 6 // 每页6行
+            let appsPerPage = gridColumns * 6 // 6 rows per page
             let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
             totalScrollPages = totalPages
         }
@@ -37,13 +37,13 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // 半透明模糊背景
+            // Semi-transparent blur background
             Rectangle()
                 .fill(.clear)
                 .background(.ultraThinMaterial)
                 .ignoresSafeArea()
             
-            // 关闭按钮
+            // Close button
 //            VStack {
 //                HStack {
 //                    Spacer()
@@ -67,12 +67,12 @@ struct ContentView: View {
 //            }
             
             VStack(spacing: 0) {
-                // 顶部工具栏
+                // Top toolbar
                 HStack {
-                    // 顶部搜索栏
+                    // Top search bar
                     searchBar
                     
-                    // 设置按钮
+                    // Settings button
 //                    Button(action: {
 //                        showingSettings = true
 //                    }) {
@@ -92,17 +92,17 @@ struct ContentView: View {
 //                    .buttonStyle(PlainButtonStyle())
                 }
                 
-                // 分类选择器
+                // Category selector
 //                categorySelector
                 
-                // 应用网格
+                // Application grid
                 if appManager.isLoading {
                     loadingView
                 } else {
                     pagedAppGrid
                 }
                 
-                // 页面指示器
+                // Page indicator
                 if !appManager.isLoading && !filteredApps.isEmpty {
                     pageIndicator
                 }
@@ -121,11 +121,11 @@ struct ContentView: View {
         .opacity(isClosing ? 0.0 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: isClosing)
         .onTapGesture {
-            // 点击背景空白区域关闭窗口
+            // Click on background blank area to close window
             animateAndClose()
         }
         .onAppear {
-            // 应用管理器会在初始化时自动加载缓存，这里只需要设置键盘监听器
+            // App manager will automatically load cache when initializing, here we only need to set up keyboard listener
             setupKeyboardListener()
             NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { event in
                 if previousDeltaX == 0 && event.deltaX != 0 {
@@ -248,7 +248,7 @@ struct ContentView: View {
     @StateObject var page: Page = .first()
     private var pagedAppGrid: some View {
         
-        let appsPerPage = gridColumns * 6 // 每页6行
+        let appsPerPage = gridColumns * 6 // 6 rows per page
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
         let items = Array(0..<totalPages)
 
@@ -301,12 +301,12 @@ struct ContentView: View {
                     }
                 }) {
                     ZStack {
-                        // 透明的点击区域 - 扩大点击热区
+                        // Transparent click area - expand click hot zone
                         Circle()
                             .fill(Color.clear)
                             .frame(width: 24, height: 24)
                         
-                        // 实际的圆点 - 保持视觉大小不变
+                        // Actual dot - keep visual size unchanged
                         Circle()
                             .fill(currentPage == pageIndex ? Color.white : Color.white.opacity(0.3))
                             .frame(width: 8, height: 8)
@@ -329,7 +329,7 @@ struct ContentView: View {
             return matchesSearch && matchesCategory
         }
         
-        // 重置到第一页
+        // Reset to first page
         currentPage = 0
     }
     
@@ -382,7 +382,7 @@ struct AppIconView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // 应用图标
+            // Application icon
             ZStack {
 //                RoundedRectangle(cornerRadius: 16)
 //                    .fill(
@@ -416,7 +416,7 @@ struct AppIconView: View {
             .scaleEffect(isHovered ? 1.1 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isHovered)
             
-            // 应用名称
+            // Application name
             Text(app.name)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.white)
@@ -436,17 +436,17 @@ struct AppIconView: View {
     private func loadAppIcon() {
         guard let path = app.path else { return }
         
-        // 先尝试从缓存加载
+        // Try to load from cache first
         if let cachedIcon = IconCache.shared.getIcon(for: path) {
             self.appIcon = cachedIcon
             return
         }
         
-        // 缓存中没有，异步加载
+        // Not in cache, load asynchronously
         DispatchQueue.global(qos: .userInitiated).async {
             let icon = NSWorkspace.shared.icon(forFile: path)
             
-            // 保存到缓存
+            // Save to cache
             IconCache.shared.setIcon(icon, for: path)
             
             DispatchQueue.main.async {
@@ -456,15 +456,15 @@ struct AppIconView: View {
     }
 }
 
-// MARK: - 图标缓存管理器
+// MARK: - Icon Cache Manager
 class IconCache {
     static let shared = IconCache()
     private let cache = NSCache<NSString, NSImage>()
     private let fileManager = FileManager.default
     
     private init() {
-        cache.countLimit = 200 // 最多缓存200个图标
-        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB内存限制
+        cache.countLimit = 200 // Cache up to 200 icons
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB memory limit
     }
     
     func getIcon(for path: String) -> NSImage? {

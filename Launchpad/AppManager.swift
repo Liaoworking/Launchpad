@@ -16,22 +16,22 @@ class AppManager: ObservableObject {
     static let shared = AppManager()
     
     private init() {
-        // 初始化时尝试加载缓存
+        // Try to load cached data when initializing
         loadCachedApps()
     }
     
-    // MARK: - 缓存管理
+    // MARK: - Cache Management
     private let cacheKey = "CachedInstalledApps"
     private let cacheExpirationKey = "CacheExpirationDate"
-    private let cacheExpirationInterval: TimeInterval = 3600 // 1小时缓存过期
+    private let cacheExpirationInterval: TimeInterval = 3600 // 1 hour cache expiration
     
     private func loadCachedApps() {
         if let cachedData = UserDefaults.standard.data(forKey: cacheKey),
            let cachedApps = try? JSONDecoder().decode([AppItem].self, from: cachedData) {
-            // 检查缓存是否过期
+            // Check if cache is expired
             let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date ?? Date.distantPast
             if Date().timeIntervalSince(expirationDate) < cacheExpirationInterval {
-                // 缓存未过期，直接使用
+                // Cache not expired, use directly
                 DispatchQueue.main.async {
                     self.installedApps = cachedApps
                 }
@@ -39,7 +39,7 @@ class AppManager: ObservableObject {
             }
         }
         
-        // 没有缓存或缓存过期，立即加载
+        // No cache or cache expired, load immediately
         loadInstalledApps()
     }
     
@@ -51,9 +51,9 @@ class AppManager: ObservableObject {
     }
     
     func loadInstalledApps() {
-        // 如果有缓存数据，先显示缓存
+        // If there's cached data, display it first
         if !installedApps.isEmpty {
-            // 后台刷新，不显示loading状态
+            // Refresh in background, don't show loading state
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 let apps = self?.scanInstalledApps() ?? []
                 
@@ -63,7 +63,7 @@ class AppManager: ObservableObject {
                 }
             }
         } else {
-            // 没有缓存数据，显示loading状态
+            // No cached data, show loading state
             isLoading = true
             
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -78,7 +78,7 @@ class AppManager: ObservableObject {
         }
     }
     
-    // 强制刷新（清除缓存）
+    // Force refresh (clear cache)
     func forceRefreshApps() {
         isLoading = true
         
@@ -96,15 +96,15 @@ class AppManager: ObservableObject {
     private func scanInstalledApps() -> [AppItem] {
         var apps: [AppItem] = []
         
-        // 扫描用户安装的应用 (/Applications)
+        // Scan user installed applications (/Applications)
         let userApplicationsPath = "/Applications"
         apps.append(contentsOf: scanApplicationsDirectory(userApplicationsPath))
         
-        // 扫描系统应用 (/System/Applications)
+        // Scan system applications (/System/Applications)
         let systemApplicationsPath = "/System/Applications"
         apps.append(contentsOf: scanApplicationsDirectory(systemApplicationsPath))
         
-        // 按名称排序
+        // Sort by name
         return apps.sorted { $0.name < $1.name }
     }
     
@@ -118,7 +118,7 @@ class AppManager: ObservableObject {
                 if fileName.hasSuffix(".app") {
                     let fullPath = "\(path)/\(fileName)"
                     
-                    // 检查是否为目录（应用包）
+                    // Check if it's a directory (application bundle)
                     var isDirectory: ObjCBool = false
                     if FileManager.default.fileExists(atPath: fullPath, isDirectory: &isDirectory) && isDirectory.boolValue {
                         if let appInfo = getAppInfo(from: fullPath) {
@@ -144,10 +144,10 @@ class AppManager: ObservableObject {
         
         let bundleIdentifier = bundle.bundleIdentifier ?? ""
         
-        // 根据应用类型分类
+        // Categorize based on application type
         let category = categorizeApp(bundleIdentifier: bundleIdentifier, appName: appName)
         
-        // 使用简单的默认图标，实际图标将在UI层按需加载
+        // Use simple default icon, actual icon will be loaded on-demand in UI layer
         let icon = "app"
         
         return AppItem(
@@ -163,7 +163,7 @@ class AppManager: ObservableObject {
         let lowercasedName = appName.lowercased()
         let lowercasedBundle = bundleIdentifier.lowercased()
         
-        // 系统应用
+        // System applications
         if lowercasedBundle.contains("com.apple") || 
            lowercasedName.contains("finder") ||
            lowercasedName.contains("safari") ||
@@ -189,7 +189,7 @@ class AppManager: ObservableObject {
             return "System"
         }
         
-        // 开发工具
+        // Development tools
         if lowercasedName.contains("xcode") ||
            lowercasedName.contains("terminal") ||
            lowercasedName.contains("visual studio") ||
@@ -203,7 +203,7 @@ class AppManager: ObservableObject {
             return "Development"
         }
         
-        // 生产力工具
+        // Productivity tools
         if lowercasedName.contains("microsoft word") ||
            lowercasedName.contains("microsoft excel") ||
            lowercasedName.contains("microsoft powerpoint") ||
@@ -219,7 +219,7 @@ class AppManager: ObservableObject {
             return "Productivity"
         }
         
-        // 娱乐应用
+        // Entertainment applications
         if lowercasedName.contains("spotify") ||
            lowercasedName.contains("netflix") ||
            lowercasedName.contains("youtube") ||
@@ -233,7 +233,7 @@ class AppManager: ObservableObject {
             return "Entertainment"
         }
         
-        // 实用工具
+        // Utility tools
         return "Utilities"
     }
     
