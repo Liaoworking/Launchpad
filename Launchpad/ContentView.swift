@@ -13,12 +13,21 @@ struct ContentView: View {
     @StateObject private var windowManager = WindowManager.shared
     @State private var searchText = ""
     @State private var selectedCategory = "All"
-    @State private var filteredApps: [AppItem] = []
+    @State private var filteredApps: [AppItem] = [] {
+        didSet {
+            let appsPerPage = gridColumns * 6 // 每页6行
+            let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
+            totalScrollPages = totalPages
+        }
+    }
     @State private var appsOrder: [AppItem] = []
     @State private var draggedApp: AppItem?
     @State private var showingSettings = false
     @State private var isClosing = false
     @State private var currentPage = 0
+    @State private var previousDeltaX = 0.0
+    @State private var totalScrollPages = 1
+    
     @AppStorage("gridColumns") private var gridColumns = 8
     
     private let categories = ["All", "Utilities", "Productivity", "Entertainment", "Development", "System"]
@@ -118,6 +127,27 @@ struct ContentView: View {
         .onAppear {
             appManager.loadInstalledApps()
             setupKeyboardListener()
+            NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { event in
+                if previousDeltaX == 0 && event.deltaX != 0 {
+                    if event.deltaX > 0 {
+                        withAnimation {
+                            page.update(.previous)
+                            if currentPage > 0 {
+                                currentPage -= 1
+                            }
+                        }
+                    } else {
+                        withAnimation {
+                            page.update(.next)
+                            if currentPage < totalScrollPages - 1 {
+                                currentPage += 1
+                            }
+                        }
+                    }
+                }
+                previousDeltaX = event.deltaX
+                return event
+            }
         }
         .onChange(of: searchText) { _ in
             filterApps()
