@@ -35,27 +35,27 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             // 关闭按钮
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        animateAndClose()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.white.opacity(0.8))
-                            .background(
-                                Circle()
-                                    .fill(Color.black.opacity(0.3))
-                                    .frame(width: 32, height: 32)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.trailing, 20)
-                    .padding(.top, 20)
-                }
-                Spacer()
-            }
+//            VStack {
+//                HStack {
+//                    Spacer()
+//                    Button(action: {
+//                        animateAndClose()
+//                    }) {
+//                        Image(systemName: "xmark.circle.fill")
+//                            .font(.system(size: 24))
+//                            .foregroundColor(.white.opacity(0.8))
+//                            .background(
+//                                Circle()
+//                                    .fill(Color.black.opacity(0.3))
+//                                    .frame(width: 32, height: 32)
+//                            )
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
+//                    .padding(.trailing, 20)
+//                    .padding(.top, 20)
+//                }
+//                Spacer()
+//            }
             
             VStack(spacing: 0) {
                 // 顶部工具栏
@@ -64,27 +64,27 @@ struct ContentView: View {
                     searchBar
                     
                     // 设置按钮
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 18))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+//                    Button(action: {
+//                        showingSettings = true
+//                    }) {
+//                        Image(systemName: "gearshape")
+//                            .font(.system(size: 18))
+//                            .foregroundColor(.white)
+//                            .frame(width: 40, height: 40)
+//                            .background(
+//                                RoundedRectangle(cornerRadius: 8)
+//                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+//                                    .overlay(
+//                                        RoundedRectangle(cornerRadius: 8)
+//                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+//                                    )
+//                            )
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 // 分类选择器
-                categorySelector
+//                categorySelector
                 
                 // 应用网格
                 if appManager.isLoading {
@@ -139,11 +139,11 @@ struct ContentView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
-                .font(.system(size: 16))
+                .font(.system(size: 12))
             
-            TextField("Search apps...", text: $searchText)
+            TextField("Search", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
-                .font(.system(size: 16))
+                .font(.system(size: 12))
                 .foregroundColor(.white)
             
             if !searchText.isEmpty {
@@ -156,13 +156,13 @@ struct ContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .frame(width: 250, height: 24)
+        .padding(.horizontal,10)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.init(white: 1.0, opacity: 0.1))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 2)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 )
         )
