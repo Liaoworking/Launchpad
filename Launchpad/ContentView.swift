@@ -7,6 +7,223 @@
 
 import SwiftUI
 import AppKit
+import CoreGraphics
+import ScreenCaptureKit
+
+// MARK: - Wallpaper Background View
+struct WallpaperBackgroundView: View {
+    @State private var backgroundImage: NSImage?
+    @State private var isLoading = true
+    @State private var hasPermission = false
+    @State private var captureAttempts = 0
+    @State private var blurRadius: CGFloat = 30
+    @State private var backgroundOpacity: Double = 1.0
+    @State private var isAnimating = false
+    
+    // 从设置中读取参数
+    @AppStorage("blurRadius") private var settingsBlurRadius: Double = 30
+    @AppStorage("enableBackgroundAnimation") private var enableBackgroundAnimation: Bool = true
+    @AppStorage("backgroundOpacity") private var settingsBackgroundOpacity: Double = 1.0
+    @AppStorage("overlayOpacity") private var overlayOpacity: Double = 0.2
+    @AppStorage("autoRefreshBackground") private var autoRefreshBackground: Bool = false
+    @AppStorage("refreshInterval") private var refreshInterval: Double = 300
+    
+    private let maxCaptureAttempts = 3
+    
+    var body: some View {
+        ZStack {
+            if let backgroundImage = backgroundImage, hasPermission {
+                Image(nsImage: backgroundImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .blur(radius: blurRadius)
+                    .scaleEffect(1.1) // Slightly scale up to avoid blur edges
+                    .opacity(backgroundOpacity)
+                    .ignoresSafeArea()
+                    .transition(.opacity.animation(.easeInOut(duration: 0.8)))
+                    .onAppear {
+                        if enableBackgroundAnimation {
+                            animateBackground()
+                        }
+                    }
+            } else {
+                // Enhanced fallback background with animation
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.15, green: 0.15, blue: 0.2),
+                                Color(red: 0.1, green: 0.1, blue: 0.15),
+                                Color(red: 0.05, green: 0.05, blue: 0.1),
+                                Color(red: 0.08, green: 0.08, blue: 0.12)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .ignoresSafeArea()
+                    .opacity(backgroundOpacity)
+                    .onAppear {
+                        if enableBackgroundAnimation {
+                            animateBackground()
+                        }
+                    }
+            }
+            
+            // Enhanced overlay for better text readability
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(overlayOpacity),
+                            Color.black.opacity(overlayOpacity * 0.5),
+                            Color.black.opacity(overlayOpacity * 0.8)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .ignoresSafeArea()
+        }
+        .onAppear {
+            checkScreenRecordingPermission()
+            setupAutoRefresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshBackground"))) { _ in
+            refreshBackground()
+        }
+        .onChange(of: settingsBlurRadius) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                blurRadius = CGFloat(newValue)
+            }
+        }
+        .onChange(of: settingsBackgroundOpacity) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                backgroundOpacity = newValue
+            }
+        }
+        .onChange(of: overlayOpacity) { _, _ in
+            // 遮罩透明度变化会通过 @AppStorage 自动更新
+        }
+    }
+    
+    private func setupAutoRefresh() {
+        guard autoRefreshBackground else { return }
+        
+        Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { _ in
+            refreshBackground()
+        }
+    }
+    
+    private func refreshBackground() {
+        // 重置状态并重新捕获
+        captureAttempts = 0
+        captureScreenBackground()
+    }
+    
+    private func animateBackground() {
+        guard !isAnimating && enableBackgroundAnimation else { return }
+        isAnimating = true
+        
+        // Subtle breathing animation for the background
+        withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+            blurRadius = CGFloat(settingsBlurRadius) + 5
+            backgroundOpacity = settingsBackgroundOpacity * 0.95
+        }
+        
+        // Reset after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            withAnimation(.easeInOut(duration: 4.0)) {
+                blurRadius = CGFloat(settingsBlurRadius)
+                backgroundOpacity = settingsBackgroundOpacity
+            }
+            isAnimating = false
+        }
+    }
+    
+    private func checkScreenRecordingPermission() {
+        // 直接尝试截图，不需要权限检查
+        hasPermission = true
+        captureScreenBackground()
+    }
+    
+    private func captureScreenBackground() {
+        guard captureAttempts < maxCaptureAttempts else {
+            isLoading = false
+            return
+        }
+        
+        captureAttempts += 1
+        isLoading = true
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            let image = captureScreen()
+            
+            DispatchQueue.main.async {
+                if let image = image {
+                    withAnimation(.easeInOut(duration: 0.8)) {
+                        self.backgroundImage = image
+                        self.hasPermission = true
+                        // 应用设置中的参数
+                        self.blurRadius = CGFloat(self.settingsBlurRadius)
+                        self.backgroundOpacity = self.settingsBackgroundOpacity
+                    }
+                } else if self.captureAttempts < self.maxCaptureAttempts {
+                    // Retry after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        self.captureScreenBackground()
+                    }
+                }
+                self.isLoading = false
+            }
+        }
+    }
+    
+    private func captureScreen() -> NSImage? {
+        // 使用 NSWorkspace 获取桌面壁纸，不需要权限
+        if let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: NSScreen.main!) {
+            if let image = NSImage(contentsOf: wallpaperURL) {
+                return image
+            }
+        }
+        
+        // 如果上面的方法失败，尝试使用 NSScreen 方法
+        if let image = captureUsingNSScreen() {
+            return image
+        }
+        
+        return nil
+    }
+    
+    private func captureUsingNSScreen() -> NSImage? {
+        guard let screen = NSScreen.main else { return nil }
+        
+        // Try to create a simple screenshot using available methods
+        let bounds = screen.frame
+        
+        // Create a simple colored background as fallback
+        let size = bounds.size
+        let image = NSImage(size: size)
+        
+        image.lockFocus()
+        let context = NSGraphicsContext.current?.cgContext
+        
+        // Draw a gradient background similar to the fallback
+        let colors = [
+            CGColor(red: 0.15, green: 0.15, blue: 0.2, alpha: 1.0),
+            CGColor(red: 0.1, green: 0.1, blue: 0.15, alpha: 1.0),
+            CGColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0),
+            CGColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1.0)
+        ]
+        
+        let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0.0, 0.3, 0.7, 1.0])!
+        context?.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: size.height), options: [])
+        
+        image.unlockFocus()
+        
+        return image
+    }
+}
 
 struct ContentView: View {
     @StateObject private var appManager = AppManager.shared
@@ -37,11 +254,8 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // Semi-transparent blur background
-            Rectangle()
-                .fill(.clear)
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea()
+            // Wallpaper blur background
+            WallpaperBackgroundView()
             
             // Close button
 //            VStack {
@@ -73,23 +287,23 @@ struct ContentView: View {
                     searchBar
                     
                     // Settings button
-//                    Button(action: {
-//                        showingSettings = true
-//                    }) {
-//                        Image(systemName: "gearshape")
-//                            .font(.system(size: 18))
-//                            .foregroundColor(.white)
-//                            .frame(width: 40, height: 40)
-//                            .background(
-//                                RoundedRectangle(cornerRadius: 8)
-//                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
-//                                    .overlay(
-//                                        RoundedRectangle(cornerRadius: 8)
-//                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-//                                    )
-//                            )
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 // Category selector
@@ -149,16 +363,16 @@ struct ContentView: View {
                 return event
             }
         }
-        .onChange(of: searchText) { _ in
+        .onChange(of: searchText) { _, _ in
             filterApps()
         }
-        .onChange(of: selectedCategory) { _ in
+        .onChange(of: selectedCategory) { _, _ in
             filterApps()
         }
-        .onChange(of: appManager.installedApps) { _ in
+        .onChange(of: appManager.installedApps) { _, _ in
             filterApps()
         }
-        .onChange(of: filteredApps) { newApps in
+        .onChange(of: filteredApps) { _, newApps in
             if appsOrder.isEmpty || appsOrder.count != newApps.count {
                 appsOrder = newApps
             }
@@ -344,7 +558,7 @@ struct ContentView: View {
                 return nil
             } else if event.keyCode == 123 { // Left arrow key
                 let appsPerPage = self.gridColumns * 6
-                let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
+                let _ = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
                 if self.currentPage > 0 {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         self.currentPage -= 1
@@ -481,7 +695,7 @@ class IconCache {
 }
 
 struct AppItem: Identifiable, Equatable, Codable {
-    let id = UUID()
+    var id = UUID()
     let name: String
     let icon: String
     let category: String
