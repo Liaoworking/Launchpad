@@ -15,6 +15,7 @@ struct SettingsView: View {
     @AppStorage("autoRefreshBackground") private var autoRefreshBackground: Bool = false
     @AppStorage("refreshInterval") private var refreshInterval: Double = 300 // 5 minutes
     
+    @State private var cacheSize: Int64 = 0
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -132,6 +133,58 @@ struct SettingsView: View {
                     .cornerRadius(16)
                 }
                 
+                Section("缓存管理") {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("壁纸缓存")
+                                .font(.headline)
+                            Text("缓存大小: \(formatCacheSize())")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .onAppear {
+                                    updateCacheSize()
+                                }
+                        }
+                        Spacer()
+                        Button("清除缓存") {
+                            clearWallpaperCache()
+                        }
+                        .foregroundColor(.red)
+                    }
+                    
+                    let cacheInfo = WallpaperCache.shared.getCacheInfo()
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("命中率: \(String(format: "%.1f%%", cacheInfo.stats.hitRate * 100))")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                            Spacer()
+                            Text("命中: \(cacheInfo.stats.hits)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("未命中: \(cacheInfo.stats.misses)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        if let identifier = cacheInfo.identifier {
+                            Text("壁纸ID: \(identifier)")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("缓存说明")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("壁纸缓存可以显著提高启动速度，建议保留")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
                 Section("操作") {
                     Button("重置为默认值") {
                         resetToDefaults()
@@ -154,6 +207,9 @@ struct SettingsView: View {
             }
         }
         .frame(width: 500, height: 700)
+        .onAppear {
+            updateCacheSize()
+        }
     }
     
     private func resetToDefaults() {
@@ -168,6 +224,26 @@ struct SettingsView: View {
     private func refreshBackground() {
         // 通知 ContentView 刷新背景
         NotificationCenter.default.post(name: NSNotification.Name("RefreshBackground"), object: nil)
+    }
+    
+    private func formatCacheSize() -> String {
+        if cacheSize < 1024 {
+            return "\(cacheSize) B"
+        } else if cacheSize < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(cacheSize) / 1024.0)
+        } else {
+            return String(format: "%.1f MB", Double(cacheSize) / (1024.0 * 1024.0))
+        }
+    }
+    
+    private func updateCacheSize() {
+        cacheSize = WallpaperCache.shared.getCacheSize()
+    }
+    
+    private func clearWallpaperCache() {
+        WallpaperCache.shared.clearCache()
+        // 更新缓存大小显示
+        updateCacheSize()
     }
 }
 
