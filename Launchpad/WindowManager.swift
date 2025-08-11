@@ -17,27 +17,27 @@ class WindowManager: ObservableObject {
         DispatchQueue.main.async {
             guard let window = NSApplication.shared.windows.first else { return }
             
-            // 设置窗口级别为覆盖 MenuBar
+            // Set window level to overlay MenuBar
             window.level = .screenSaver
             
-            // 设置窗口行为
+            // Set window behavior
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             
-            // 设置透明
+            // Set transparency
             window.isOpaque = false
             window.backgroundColor = NSColor.clear
             window.hasShadow = false
             
-            // 设置窗口样式 - 移除 fullSizeContentView 以确保事件处理正常
+            // Set window style - remove fullSizeContentView to ensure proper event handling
             window.styleMask = [.borderless, .fullSizeContentView]
 //            window.styleMask = [.borderless]
 
-            // 设置窗口大小为全屏（包括 MenuBar 区域）
+            // Set window size to full screen (including MenuBar area)
             if let screen = NSScreen.main {
                 window.setFrame(screen.frame, display: true)
             }
             
-            // 设置窗口为全屏
+            // Set window to full screen
             window.toggleFullScreen(nil)
         }
     }

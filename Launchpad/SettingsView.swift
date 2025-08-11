@@ -23,10 +23,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("壁纸模糊设置") {
+                Section("Wallpaper Blur Settings") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("模糊强度")
+                            Text("Blur Intensity")
                             Spacer()
                             Text("\(Int(blurRadius))")
                                 .foregroundColor(.secondary)
@@ -38,7 +38,7 @@ struct SettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("背景透明度")
+                            Text("Background Opacity")
                             Spacer()
                             Text("\(Int(backgroundOpacity * 100))%")
                                 .foregroundColor(.secondary)
@@ -50,7 +50,7 @@ struct SettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("遮罩透明度")
+                            Text("Overlay Opacity")
                             Spacer()
                             Text("\(Int(overlayOpacity * 100))%")
                                 .foregroundColor(.secondary)
@@ -61,27 +61,27 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section("动画设置") {
-                    Toggle("启用背景动画", isOn: $enableBackgroundAnimation)
+                Section("Animation Settings") {
+                    Toggle("Enable Background Animation", isOn: $enableBackgroundAnimation)
                     
                     if enableBackgroundAnimation {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("动画说明")
+                            Text("Animation Description")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("背景会有轻微的呼吸效果，让界面更加生动")
+                            Text("Background will have subtle breathing effect to make interface more lively")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
                 
-                Section("网格布局设置") {
+                Section("Grid Layout Settings") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("每行应用数量")
+                            Text("Apps Per Row")
                             Spacer()
-                            Text("\(gridColumns) 个")
+                            Text("\(gridColumns) apps")
                                 .foregroundColor(.secondary)
                         }
                         
@@ -94,9 +94,9 @@ struct SettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("每页行数")
+                            Text("Rows Per Page")
                             Spacer()
-                            Text("\(gridRows) 行")
+                            Text("\(gridRows) rows")
                                 .foregroundColor(.secondary)
                         }
                         
@@ -108,24 +108,24 @@ struct SettingsView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("布局说明")
+                        Text("Layout Description")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("每页最多显示 \(gridColumns * gridRows) 个应用")
+                        Text("Maximum \(gridColumns * gridRows) apps per page")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("自动刷新") {
-                    Toggle("自动刷新背景", isOn: $autoRefreshBackground)
+                Section("Auto Refresh") {
+                    Toggle("Auto Refresh Background", isOn: $autoRefreshBackground)
                     
                     if autoRefreshBackground {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("刷新间隔")
+                                Text("Refresh Interval")
                                 Spacer()
-                                Text("\(Int(refreshInterval / 60)) 分钟")
+                                Text("\(Int(refreshInterval / 60)) minutes")
                                     .foregroundColor(.secondary)
                             }
                             
@@ -135,9 +135,9 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section("预览") {
+                Section("Preview") {
                     VStack(spacing: 16) {
-                        Text("模糊效果预览")
+                        Text("Blur Effect Preview")
                             .font(.headline)
                         
                         RoundedRectangle(cornerRadius: 12)
@@ -165,7 +165,7 @@ struct SettingsView: View {
                                     .cornerRadius(12)
                             )
                             .overlay(
-                                Text("预览文本")
+                                Text("Preview Text")
                                     .foregroundColor(.white)
                                     .font(.title2)
                                     .fontWeight(.medium)
@@ -176,12 +176,12 @@ struct SettingsView: View {
                     .cornerRadius(16)
                 }
                 
-                Section("缓存管理") {
+                Section("Cache Management") {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("壁纸缓存")
+                            Text("Wallpaper Cache")
                                 .font(.headline)
-                            Text("缓存大小: \(formatCacheSize())")
+                            Text("Cache Size: \(formatCacheSize())")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .onAppear {
@@ -189,7 +189,7 @@ struct SettingsView: View {
                                 }
                         }
                         Spacer()
-                        Button("清除缓存") {
+                        Button("Clear Cache") {
                             clearWallpaperCache()
                         }
                         .foregroundColor(.red)
@@ -198,20 +198,20 @@ struct SettingsView: View {
                     let cacheInfo = WallpaperCache.shared.getCacheInfo()
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("命中率: \(String(format: "%.1f%%", cacheInfo.stats.hitRate * 100))")
+                            Text("Hit Rate: \(String(format: "%.1f%%", cacheInfo.stats.hitRate * 100))")
                                 .font(.caption)
                                 .foregroundColor(.green)
                             Spacer()
-                            Text("命中: \(cacheInfo.stats.hits)")
+                            Text("Hits: \(cacheInfo.stats.hits)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("未命中: \(cacheInfo.stats.misses)")
+                            Text("Misses: \(cacheInfo.stats.misses)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                         
                         if let identifier = cacheInfo.identifier {
-                            Text("壁纸ID: \(identifier)")
+                            Text("Wallpaper ID: \(identifier)")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
@@ -219,31 +219,31 @@ struct SettingsView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("缓存说明")
+                        Text("Cache Description")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("壁纸缓存可以显著提高启动速度，建议保留")
+                        Text("Wallpaper cache can significantly improve startup speed, recommended to keep")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("操作") {
-                    Button("重置为默认值") {
+                Section("Actions") {
+                    Button("Reset to Defaults") {
                         resetToDefaults()
                     }
                     .foregroundColor(.orange)
                     
-                    Button("刷新背景") {
+                    Button("Refresh Background") {
                         refreshBackground()
                     }
                     .foregroundColor(.blue)
                 }
             }
-            .navigationTitle("设置")
+            .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("完成") {
+                    Button("Done") {
                         dismiss()
                     }
                 }
@@ -267,7 +267,7 @@ struct SettingsView: View {
     }
     
     private func refreshBackground() {
-        // 通知 ContentView 刷新背景
+        // Notify ContentView to refresh background
         NotificationCenter.default.post(name: NSNotification.Name("RefreshBackground"), object: nil)
     }
     
@@ -287,7 +287,7 @@ struct SettingsView: View {
     
     private func clearWallpaperCache() {
         WallpaperCache.shared.clearCache()
-        // 更新缓存大小显示
+        // Update cache size display
         updateCacheSize()
     }
 }

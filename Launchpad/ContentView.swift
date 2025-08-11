@@ -16,14 +16,14 @@ struct WallpaperBackgroundView: View {
     @State private var isLoading = true
     @State private var captureAttempts = 0
     @State private var blurRadius: CGFloat = 30
-    @State private var backgroundOpacity: Double = 1.0  // 初始透明度设为1.0，避免黑屏
+    @State private var backgroundOpacity: Double = 1.0  // Set initial opacity to 1.0 to avoid black screen
     @State private var isAnimating = false
-    @State private var isWallpaperReady = false  // 新增：标记壁纸是否准备就绪
-    @State private var isInitialized = false  // 新增：标记是否已完成初始化
+    @State private var isWallpaperReady = false  // Added: Mark whether wallpaper is ready
+    @State private var isInitialized = false  // Added: Mark whether initialization is completed
     
     private let fileManager = FileManager.default
     
-    // 从设置中读取参数
+    // Read parameters from settings
     @AppStorage("blurRadius") private var settingsBlurRadius: Double = 30
     @AppStorage("enableBackgroundAnimation") private var enableBackgroundAnimation: Bool = true
     @AppStorage("backgroundOpacity") private var settingsBackgroundOpacity: Double = 1.0
@@ -35,14 +35,14 @@ struct WallpaperBackgroundView: View {
     
     var body: some View {
         ZStack {
-            // 壁纸背景层
+            // Wallpaper background layer
             if let backgroundImage = backgroundImage {
                 Image(nsImage: backgroundImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .blur(radius: blurRadius)
                     .scaleEffect(1.1) // Slightly scale up to avoid blur edges
-                    .opacity(backgroundOpacity)  // 直接使用backgroundOpacity，不再依赖isWallpaperReady
+                    .opacity(backgroundOpacity)  // Use backgroundOpacity directly, no longer depend on isWallpaperReady
                     .ignoresSafeArea()
                     .onAppear {
                         if enableBackgroundAnimation {
@@ -51,7 +51,7 @@ struct WallpaperBackgroundView: View {
                     }
             }
             
-            // Fallback背景层 - 始终显示，但透明度根据壁纸状态调整
+            // Fallback background layer - always displayed, but opacity adjusted based on wallpaper status
             Rectangle()
                 .fill(
                     LinearGradient(
@@ -66,7 +66,7 @@ struct WallpaperBackgroundView: View {
                     )
                 )
                 .ignoresSafeArea()
-                .opacity(isWallpaperReady ? 0.0 : 1.0) // 壁纸准备好时隐藏fallback背景
+                .opacity(isWallpaperReady ? 0.0 : 1.0) // Hide fallback background when wallpaper is ready
                 .onAppear {
                     if enableBackgroundAnimation {
                         animateBackground()
@@ -89,17 +89,17 @@ struct WallpaperBackgroundView: View {
                 .ignoresSafeArea()
         }
         .onAppear {
-            // 立即同步加载缓存壁纸，避免黑屏
+            // Immediately load cached wallpaper synchronously to avoid black screen
             loadCachedWallpaper()
             
-            // 设置自动刷新
+            // Setup auto refresh
             setupAutoRefresh()
             
-            // 标记初始化完成
+            // Mark initialization completed
             isInitialized = true
         }
         .task {
-            // 只有在初始化完成后才异步预加载壁纸
+            // Only preload wallpaper asynchronously after initialization is completed
             guard isInitialized else { return }
             await preloadWallpaper()
         }
@@ -117,7 +117,7 @@ struct WallpaperBackgroundView: View {
             }
         }
         .onChange(of: overlayOpacity) { _, _ in
-            // 遮罩透明度变化会通过 @AppStorage 自动更新
+            // Overlay opacity changes will be automatically updated through @AppStorage
         }
     }
     
@@ -130,7 +130,7 @@ struct WallpaperBackgroundView: View {
     }
     
     private func refreshBackground() {
-        // 重置状态并重新捕获
+        // Reset state and re-capture
         captureAttempts = 0
         captureScreenBackground()
     }
@@ -156,22 +156,22 @@ struct WallpaperBackgroundView: View {
     }
     
     private func checkScreenRecordingPermission() {
-        // 立即开始加载壁纸，不等待
+        // Start loading wallpaper immediately, don't wait
         captureScreenBackground()
     }
     
     private func loadCachedWallpaper() {
-        // 同步从缓存加载壁纸，避免黑屏
+        // Load wallpaper from cache synchronously to avoid black screen
         if let cachedImage = WallpaperCache.shared.getWallpaper() {
             self.backgroundImage = cachedImage
             self.blurRadius = CGFloat(self.settingsBlurRadius)
             self.backgroundOpacity = self.settingsBackgroundOpacity
             self.isWallpaperReady = true
             self.isLoading = false
-            print("✅ 从缓存加载壁纸成功")
+            print("✅ Successfully loaded wallpaper from cache")
         } else {
-            print("⚠️ 缓存中没有壁纸，开始捕获新壁纸")
-            // 如果缓存中没有，立即开始捕获
+            print("⚠️ No wallpaper in cache, starting to capture new wallpaper")
+            // If not in cache, start capturing immediately
             captureScreenBackground()
         }
     }
@@ -185,13 +185,13 @@ struct WallpaperBackgroundView: View {
         captureAttempts += 1
         isLoading = true
         
-        // 只有在确实需要更新缓存时才清除
+        // Only clear cache when it actually needs to be updated
         if WallpaperCache.shared.shouldUpdateCache() && isInitialized {
-            print("🔄 壁纸发生变化，清除旧缓存")
+            print("🔄 Wallpaper changed, clearing old cache")
             WallpaperCache.shared.clearCache()
         }
         
-        // 先尝试从缓存获取
+        // Try to get from cache first
         if let cachedImage = WallpaperCache.shared.getWallpaper() {
             DispatchQueue.main.async {
                 self.backgroundImage = cachedImage
@@ -199,27 +199,27 @@ struct WallpaperBackgroundView: View {
                 self.backgroundOpacity = self.settingsBackgroundOpacity
                 self.isWallpaperReady = true
                 self.isLoading = false
-                print("✅ 从缓存获取壁纸成功")
+                print("✅ Successfully got wallpaper from cache")
             }
             return
         }
         
-        // 缓存中没有，则加载新壁纸
+        // Not in cache, load new wallpaper
         DispatchQueue.global(qos: .userInteractive).async {
             let image = captureScreen()
             
             DispatchQueue.main.async {
                 if let image = image {
                     self.backgroundImage = image
-                    // 应用设置中的参数
+                    // Apply parameters from settings
                     self.blurRadius = CGFloat(self.settingsBlurRadius)
                     self.backgroundOpacity = self.settingsBackgroundOpacity
                     
-                    // 保存到缓存
+                    // Save to cache
                     WallpaperCache.shared.setWallpaper(image)
-                    print("💾 新壁纸已保存到缓存")
+                    print("💾 New wallpaper saved to cache")
                     
-                    // 壁纸准备就绪后，立即显示（无动画）
+                    // After wallpaper is ready, display immediately (no animation)
                     self.isWallpaperReady = true
                     self.backgroundOpacity = self.settingsBackgroundOpacity
                 } else if self.captureAttempts < self.maxCaptureAttempts {
@@ -234,27 +234,27 @@ struct WallpaperBackgroundView: View {
     }
     
     private func preloadWallpaper() async {
-        // 只有在初始化完成后才进行预加载
+        // Only preload after initialization is completed
         guard isInitialized else { return }
         
-        // 检查是否需要更新缓存（只在必要时）
+        // Check if cache needs to be updated (only when necessary)
         if WallpaperCache.shared.shouldUpdateCache() {
-            print("🔄 预加载时检测到壁纸变化，清除旧缓存")
+            print("🔄 Wallpaper change detected during preload, clearing old cache")
             WallpaperCache.shared.clearCache()
         }
         
-        // 先尝试从缓存获取壁纸
+        // Try to get wallpaper from cache first
         if let cachedImage = WallpaperCache.shared.getWallpaper() {
             DispatchQueue.main.async {
-                // 如果当前没有背景图片，才设置
+                // Only set if there's no current background image
                 if self.backgroundImage == nil {
                     self.backgroundImage = cachedImage
                     self.blurRadius = CGFloat(self.settingsBlurRadius)
                     self.backgroundOpacity = self.settingsBackgroundOpacity
-                    print("✅ 预加载时从缓存获取壁纸")
+                    print("✅ Got wallpaper from cache during preload")
                 }
                 
-                // 立即显示缓存的壁纸
+                // Display cached wallpaper immediately
                 withAnimation(.easeIn(duration: 0.05)) {
                     self.isWallpaperReady = true
                 }
@@ -262,7 +262,7 @@ struct WallpaperBackgroundView: View {
             return
         }
         
-        // 缓存中没有，则加载新壁纸
+        // Not in cache, load new wallpaper
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInteractive).async {
                 let image = self.captureScreen()
@@ -273,11 +273,11 @@ struct WallpaperBackgroundView: View {
                         self.blurRadius = CGFloat(self.settingsBlurRadius)
                         self.backgroundOpacity = self.settingsBackgroundOpacity
                         
-                        // 保存到缓存
+                        // Save to cache
                         WallpaperCache.shared.setWallpaper(image)
-                        print("💾 预加载时新壁纸已保存到缓存")
+                        print("💾 New wallpaper saved to cache during preload")
                         
-                        // 立即显示壁纸，无延迟
+                        // Display wallpaper immediately, no delay
                         withAnimation(.easeIn(duration: 0.1)) {
                             self.isWallpaperReady = true
                         }
@@ -289,16 +289,16 @@ struct WallpaperBackgroundView: View {
     }
     
     private func captureScreen() -> NSImage? {
-        // 使用 NSWorkspace 获取桌面壁纸，不需要权限
+        // Use NSWorkspace to get desktop wallpaper, no permissions required
         if let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: NSScreen.main!) {
             if let image = NSImage(contentsOf: wallpaperURL) {
-                // 检查壁纸是否发生变化
+                // Check if wallpaper has changed
                 checkWallpaperChange(image: image)
                 return image
             }
         }
         
-        // 如果上面的方法失败，尝试使用 NSScreen 方法
+        // If the above method fails, try using NSScreen method
         if let image = captureUsingNSScreen() {
             return image
         }
@@ -307,16 +307,16 @@ struct WallpaperBackgroundView: View {
     }
     
     private func checkWallpaperChange(image: NSImage) {
-        // 检查壁纸是否发生变化
+        // Check if wallpaper has changed
         if let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: NSScreen.main!) {
             do {
                 let attributes = try fileManager.attributesOfItem(atPath: wallpaperURL.path)
                 if let modificationDate = attributes[.modificationDate] as? Date {
                     let currentKey = "wallpaper_\(Int(modificationDate.timeIntervalSince1970))"
-                    // 这里可以添加更智能的缓存键生成逻辑
+                    // Smart cache key generation logic can be added here
                 }
             } catch {
-                // 如果无法获取文件属性，继续使用默认缓存
+                // If unable to get file attributes, continue using default cache
             }
         }
     }
@@ -370,6 +370,9 @@ struct ContentView: View {
     @State private var currentPage = 0
     @State private var previousDeltaX = 0.0
     @State private var totalScrollPages = 1
+    @State private var scrollAccumulator = 0.0
+    @State private var lastScrollTime = Date()
+    @State private var isScrolling = false
     
     @AppStorage("gridColumns") private var gridColumns = 8
     @AppStorage("gridRows") private var gridRows = 5
@@ -470,24 +473,7 @@ struct ContentView: View {
             // App manager will automatically load cache when initializing, here we only need to set up keyboard listener
             setupKeyboardListener()
             NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { event in
-                if previousDeltaX == 0 && event.deltaX != 0 {
-                    if event.deltaX > 0 {
-                        withAnimation {
-                            page.update(.previous)
-                            if currentPage > 0 {
-                                currentPage -= 1
-                            }
-                        }
-                    } else {
-                        withAnimation {
-                            page.update(.next)
-                            if currentPage < totalScrollPages - 1 {
-                                currentPage += 1
-                            }
-                        }
-                    }
-                }
-                previousDeltaX = event.deltaX
+                handleScrollEvent(event)
                 return event
             }
         }
@@ -685,10 +671,9 @@ struct ContentView: View {
                 animateAndClose()
                 return nil
             } else if event.keyCode == 123 { // Left arrow key
-                let appsPerPage = self.gridColumns * self.gridRows
-                let _ = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
                 if self.currentPage > 0 {
                     withAnimation(.easeInOut(duration: 0.3)) {
+                        self.page.update(.previous)
                         self.currentPage -= 1
                     }
                 }
@@ -698,12 +683,70 @@ struct ContentView: View {
                 let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
                 if self.currentPage < totalPages - 1 {
                     withAnimation(.easeInOut(duration: 0.3)) {
+                        self.page.update(.next)
                         self.currentPage += 1
                     }
                 }
                 return nil
             }
             return event
+        }
+    }
+    
+    private func handleScrollEvent(_ event: NSEvent) {
+        let currentTime = Date()
+        let timeSinceLastScroll = currentTime.timeIntervalSince(lastScrollTime)
+        
+        // Ignore vertical and tiny scrolls, only handle obvious horizontal scrolls
+        guard abs(event.deltaX) > abs(event.deltaY) && abs(event.deltaX) > 1.0 else {
+            return
+        }
+        
+        // Debounce mechanism: ignore if just paged and time interval is less than 0.3 seconds
+        if isScrolling && timeSinceLastScroll < 0.3 {
+            return
+        }
+        
+        // Reset or continue accumulating scroll
+        if timeSinceLastScroll > 0.5 {
+            scrollAccumulator = 0.0
+        }
+        
+        // Accumulate horizontal scroll value
+        scrollAccumulator += event.deltaX
+        lastScrollTime = currentTime
+        
+        // Set scroll threshold: need to accumulate enough scroll amount to trigger page flip
+        let scrollThreshold: Double = 20.0
+        
+        if abs(scrollAccumulator) >= scrollThreshold {
+            isScrolling = true
+            
+            if scrollAccumulator > 0 {
+                // Scroll left, previous page
+                if currentPage > 0 {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        page.update(.previous)
+                        currentPage -= 1
+                    }
+                }
+            } else {
+                // Scroll right, next page
+                if currentPage < totalScrollPages - 1 {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        page.update(.next)
+                        currentPage += 1
+                    }
+                }
+            }
+            
+            // Reset accumulator
+            scrollAccumulator = 0.0
+            
+            // Set a delay to prevent continuous page flipping
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.isScrolling = false
+            }
         }
     }
     

@@ -60,10 +60,10 @@ struct DropViewDelegate: DropDelegate {
     }
     
     func dropEntered(info: DropInfo) {
-        // 可以在这里添加拖拽进入的视觉反馈
+        // Can add visual feedback for drag enter here
     }
     
     func dropExited(info: DropInfo) {
-        // 可以在这里添加拖拽退出的视觉反馈
+        // Can add visual feedback for drag exit here
     }
 } 
