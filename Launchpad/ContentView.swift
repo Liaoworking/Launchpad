@@ -358,7 +358,7 @@ struct ContentView: View {
     @State private var selectedCategory = "All"
     @State private var filteredApps: [AppItem] = [] {
         didSet {
-            let appsPerPage = gridColumns * 6 // 6 rows per page
+            let appsPerPage = gridColumns * gridRows
             let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
             totalScrollPages = totalPages
         }
@@ -372,6 +372,7 @@ struct ContentView: View {
     @State private var totalScrollPages = 1
     
     @AppStorage("gridColumns") private var gridColumns = 8
+    @AppStorage("gridRows") private var gridRows = 5
     
     private let categories = ["All", "Utilities", "Productivity", "Entertainment", "Development", "System"]
     private var columns: [GridItem] {
@@ -410,38 +411,39 @@ struct ContentView: View {
                 // Top toolbar
                 HStack {
                     // Top search bar
-                    searchBar
+                    searchBar.safeAreaPadding(.top)
                     
                     // Settings button
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 18))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+//                    Button(action: {
+//                        showingSettings = true
+//                    }) {
+//                        Image(systemName: "gearshape")
+//                            .font(.system(size: 18))
+//                            .foregroundColor(.white)
+//                            .frame(width: 40, height: 40)
+//                            .background(
+//                                RoundedRectangle(cornerRadius: 8)
+//                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+//                                    .overlay(
+//                                        RoundedRectangle(cornerRadius: 8)
+//                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+//                                    )
+//                            )
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 // Category selector
 //                categorySelector
                 
                 // Application grid
-                if appManager.isLoading {
-                    loadingView
-                } else {
+//                if appManager.isLoading {
+//                    loadingView
+//                } else {
+//                    pagedAppGrid
+//                }
                     pagedAppGrid
-                }
-                
+
                 // Page indicator
                 if !appManager.isLoading && !filteredApps.isEmpty {
                     pageIndicator
@@ -588,7 +590,7 @@ struct ContentView: View {
     @StateObject var page: Page = .first()
     private var pagedAppGrid: some View {
         
-        let appsPerPage = gridColumns * 6 // 6 rows per page
+        let appsPerPage = gridColumns * gridRows
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
         let items = Array(0..<totalPages)
 
@@ -629,7 +631,7 @@ struct ContentView: View {
     }
     
     private var pageIndicator: some View {
-        let appsPerPage = gridColumns * 6
+        let appsPerPage = gridColumns * gridRows
         let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
         
         return HStack(spacing: 0) {
@@ -683,7 +685,7 @@ struct ContentView: View {
                 animateAndClose()
                 return nil
             } else if event.keyCode == 123 { // Left arrow key
-                let appsPerPage = self.gridColumns * 6
+                let appsPerPage = self.gridColumns * self.gridRows
                 let _ = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
                 if self.currentPage > 0 {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -692,7 +694,7 @@ struct ContentView: View {
                 }
                 return nil
             } else if event.keyCode == 124 { // Right arrow key
-                let appsPerPage = self.gridColumns * 6
+                let appsPerPage = self.gridColumns * self.gridRows
                 let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
                 if self.currentPage < totalPages - 1 {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -718,7 +720,6 @@ struct ContentView: View {
 struct AppIconView: View {
     let app: AppItem
     @State private var isHovered = false
-    @State private var appIcon: NSImage?
     
     var body: some View {
         VStack(spacing: 8) {
@@ -742,7 +743,8 @@ struct AppIconView: View {
 //                    )
 //                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 
-                if let appIcon = appIcon {
+                // Use the pre-loaded NSImage from AppItem for instant display
+                if let appIcon = app.image {
                     Image(nsImage: appIcon)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -767,31 +769,6 @@ struct AppIconView: View {
         }
         .onHover { hovering in
             isHovered = hovering
-        }
-        .onAppear {
-            loadAppIcon()
-        }
-    }
-    
-    private func loadAppIcon() {
-        guard let path = app.path else { return }
-        
-        // Try to load from cache first
-        if let cachedIcon = IconCache.shared.getIcon(for: path) {
-            self.appIcon = cachedIcon
-            return
-        }
-        
-        // Not in cache, load asynchronously
-        DispatchQueue.global(qos: .userInitiated).async {
-            let icon = NSWorkspace.shared.icon(forFile: path)
-            
-            // Save to cache
-            IconCache.shared.setIcon(icon, for: path)
-            
-            DispatchQueue.main.async {
-                self.appIcon = icon
-            }
         }
     }
 }
@@ -956,10 +933,16 @@ class IconCache {
 struct AppItem: Identifiable, Equatable, Codable {
     var id = UUID()
     let name: String
-    let icon: String
+    let icon: String // Keep for backward compatibility
     let category: String
     let bundleIdentifier: String
     let path: String?
+    
+    // Transient property to get NSImage from file path
+    var image: NSImage? {
+        guard let path = path else { return nil }
+        return NSWorkspace.shared.icon(forFile: path)
+    }
     
     init(name: String, icon: String, category: String, bundleIdentifier: String = "", path: String? = nil) {
         self.name = name

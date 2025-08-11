@@ -14,6 +14,8 @@ struct SettingsView: View {
     @AppStorage("overlayOpacity") private var overlayOpacity: Double = 0.2
     @AppStorage("autoRefreshBackground") private var autoRefreshBackground: Bool = false
     @AppStorage("refreshInterval") private var refreshInterval: Double = 300 // 5 minutes
+    @AppStorage("gridColumns") private var gridColumns: Int = 8
+    @AppStorage("gridRows") private var gridRows: Int = 6
     
     @State private var cacheSize: Int64 = 0
     @Environment(\.dismiss) private var dismiss
@@ -71,6 +73,47 @@ struct SettingsView: View {
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
+                    }
+                }
+                
+                Section("网格布局设置") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("每行应用数量")
+                            Spacer()
+                            Text("\(gridColumns) 个")
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Slider(value: Binding(
+                            get: { Double(gridColumns) },
+                            set: { gridColumns = Int($0) }
+                        ), in: 4...15, step: 1)
+                            .accentColor(.blue)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("每页行数")
+                            Spacer()
+                            Text("\(gridRows) 行")
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Slider(value: Binding(
+                            get: { Double(gridRows) },
+                            set: { gridRows = Int($0) }
+                        ), in: 3...8, step: 1)
+                            .accentColor(.blue)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("布局说明")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("每页最多显示 \(gridColumns * gridRows) 个应用")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
@@ -219,6 +262,8 @@ struct SettingsView: View {
         overlayOpacity = 0.2
         autoRefreshBackground = false
         refreshInterval = 300
+        gridColumns = 8
+        gridRows = 6
     }
     
     private func refreshBackground() {
