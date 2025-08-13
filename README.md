@@ -5,4 +5,4 @@
 
 ![Software Screenshot](img/demo.png)
 
-you can download app for [here](https://github.com/Liaoworking/Launchpad/releases)
+you can download app from [here](https://github.com/Liaoworking/Launchpad/releases)
