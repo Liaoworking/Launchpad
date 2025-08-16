@@ -10,6 +10,7 @@ import SwiftUI
 struct DraggableAppGrid: View {
     let apps: [AppItem]
     let columns: [GridItem]
+    let iconSize: CGFloat
     let onAppTap: (AppItem) -> Void
     @Binding var draggedApp: AppItem?
     @Binding var appsOrder: [AppItem]
@@ -17,7 +18,7 @@ struct DraggableAppGrid: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 30) {
             ForEach(appsOrder) { app in
-                AppIconView(app: app)
+                AppIconView(app: app, iconSize: iconSize)
                     .onTapGesture {
                         onAppTap(app)
                     }

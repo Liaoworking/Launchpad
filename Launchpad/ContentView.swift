@@ -373,6 +373,8 @@ struct ContentView: View {
     @State private var scrollAccumulator = 0.0
     @State private var lastScrollTime = Date()
     @State private var isScrolling = false
+    @State private var iconSize: CGFloat = 100 // 动态计算的图标大小
+    @State private var screenSize: CGSize = .zero // 屏幕尺寸
     
     @AppStorage("gridColumns") private var gridColumns = 8
     @AppStorage("gridRows") private var gridRows = 5
@@ -380,6 +382,50 @@ struct ContentView: View {
     private let categories = ["All", "Utilities", "Productivity", "Entertainment", "Development", "System"]
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: 20), count: gridColumns)
+    }
+    
+    // 计算动态图标大小
+    private func calculateIconSize() -> CGFloat {
+        guard screenSize.height > 0 else { return 100 }
+        
+        // 基于屏幕高度计算图标大小
+        // 顶部边距(20px) + 搜索栏(44px) + 搜索栏下边距(20px) = 84px
+        // 底部页面指示器(48px) + 底部边距(40px) = 88px
+        // 总预留空间 = 84 + 88 = 172px
+        let reservedHeight: CGFloat = 172
+        let availableHeight = screenSize.height - reservedHeight
+        
+        // 计算每行可用高度（图标 + 文字 + 行间距）
+        let gridSpacing: CGFloat = 30 // LazyVGrid的spacing
+        let textHeight: CGFloat = 32 // 文字预估高度(两行文字 + 间距)
+        let iconTextSpacing: CGFloat = 8 // 图标和文字之间的间距
+        
+        // 总的垂直间距 = (行数-1) * gridSpacing
+        let totalGridSpacing = CGFloat(gridRows - 1) * gridSpacing
+        
+        // 可用于内容的高度
+        let contentHeight = availableHeight - totalGridSpacing
+        
+        // 每行的高度
+        let rowHeight = contentHeight / CGFloat(gridRows)
+        
+        // 图标高度 = 行高 - 文字高度 - 图标文字间距
+        let iconHeight = rowHeight - textHeight - iconTextSpacing
+        
+        // 限制图标大小在合理范围内：最小50px，最大150px
+        let clampedIconHeight = max(50, min(150, iconHeight))
+        
+        print("📐 屏幕高度: \(screenSize.height), 可用高度: \(availableHeight), 行高: \(rowHeight), 图标大小: \(clampedIconHeight)")
+        
+        return clampedIconHeight
+    }
+    
+    // 获取当前屏幕尺寸
+    private func updateScreenSize() {
+        if let screen = NSScreen.main {
+            screenSize = screen.visibleFrame.size
+            iconSize = calculateIconSize()
+        }
     }
     
     var body: some View {
@@ -470,11 +516,23 @@ struct ContentView: View {
             animateAndClose()
         }
         .onAppear {
+            // 更新屏幕尺寸和图标大小
+            updateScreenSize()
+            
             // App manager will automatically load cache when initializing, here we only need to set up keyboard listener
             setupKeyboardListener()
             NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { event in
                 handleScrollEvent(event)
                 return event
+            }
+            
+            // 监听窗口大小变化
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.didResizeNotification,
+                object: nil,
+                queue: .main
+            ) { _ in
+                updateScreenSize()
             }
         }
         .onChange(of: searchText) { _, _ in
@@ -490,6 +548,14 @@ struct ContentView: View {
             if appsOrder.isEmpty || appsOrder.count != newApps.count {
                 appsOrder = newApps
             }
+        }
+        .onChange(of: gridRows) { _, _ in
+            // 网格行数改变时重新计算图标大小
+            iconSize = calculateIconSize()
+        }
+        .onChange(of: gridColumns) { _, _ in
+            // 网格列数改变时重新计算图标大小
+            iconSize = calculateIconSize()
         }
     }
     
@@ -589,7 +655,7 @@ struct ContentView: View {
             VStack(content: {
                 LazyVGrid(columns: columns, spacing: 30) {
                     ForEach(pageApps) { app in
-                        AppIconView(app: app)
+                        AppIconView(app: app, iconSize: iconSize)
                             .onTapGesture {
                                 animateAndClose {
                                     launchApp(app)
@@ -762,6 +828,7 @@ struct ContentView: View {
 
 struct AppIconView: View {
     let app: AppItem
+    let iconSize: CGFloat
     @State private var isHovered = false
     
     var body: some View {
@@ -791,10 +858,10 @@ struct AppIconView: View {
                     Image(nsImage: appIcon)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
+                        .frame(width: iconSize, height: iconSize)
                 } else {
                     Image(systemName: app.icon)
-                        .font(.system(size: 40))
+                        .font(.system(size: iconSize * 0.4)) // 系统图标大小为图标尺寸的40%
                         .foregroundColor(.white)
                 }
             }
@@ -803,12 +870,12 @@ struct AppIconView: View {
             
             // Application name
             Text(app.name)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: max(9, iconSize * 0.11), weight: .medium)) // 字体大小也动态调整
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .shadow(radius: 2)
-                .frame(width: 80)
+                .frame(width: iconSize * 0.8) // 文字宽度为图标宽度的80%
         }
         .onHover { hovering in
             isHovered = hovering
