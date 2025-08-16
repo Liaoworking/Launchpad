@@ -460,7 +460,7 @@ struct ContentView: View {
                 // Top toolbar
                 HStack {
                     // Top search bar
-                    searchBar.safeAreaPadding(.top)
+                    searchBar.safeAreaPadding(.top).padding(.vertical, 10)
                     
                     // Settings button
 //                    Button(action: {
@@ -502,7 +502,7 @@ struct ContentView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 80)
             .padding(.top, 20)
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
