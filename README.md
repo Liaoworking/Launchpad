@@ -4,9 +4,6 @@
 ## Screenshots
 ![Launchpad Screenshot](img/demo.png)
 
-## Download
-You can download the latest version of the app from the [releases page](https://github.com/Liaoworking/Launchpad/releases).
-
 ## Features
 - Intuitive app launching interface
 - Customizable app grid layout
