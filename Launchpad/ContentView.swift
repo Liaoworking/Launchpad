@@ -497,12 +497,9 @@ struct ContentView: View {
                 if !appManager.isLoading && !filteredApps.isEmpty {
                     pageIndicator
                 }
-                
-
-                
                 Spacer()
             }
-            .padding(.horizontal, 80)
+            .padding(.horizontal, 60)
             .padding(.top, 20)
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
@@ -657,9 +654,7 @@ struct ContentView: View {
                     ForEach(pageApps) { app in
                         AppIconView(app: app, iconSize: iconSize)
                             .onTapGesture {
-                                animateAndClose {
-                                    launchApp(app)
-                                }
+                                animateAndClose { launchApp(app) }
                             }
                             .onDrag {
                                 draggedApp = app
@@ -676,9 +671,7 @@ struct ContentView: View {
                 }
                 Spacer()
             })
-            .background {
-                Color.black.opacity(0.001)
-            }
+            .background { Color.black.opacity(0.001) }
         }.allowsKeyboardControl(false)
     }
     
@@ -764,19 +757,13 @@ struct ContentView: View {
         let timeSinceLastScroll = currentTime.timeIntervalSince(lastScrollTime)
         
         // Ignore vertical and tiny scrolls, only handle obvious horizontal scrolls
-        guard abs(event.deltaX) > abs(event.deltaY) && abs(event.deltaX) > 1.0 else {
-            return
-        }
+        guard abs(event.deltaX) > abs(event.deltaY) && abs(event.deltaX) > 1.0 else { return }
         
         // Debounce mechanism: ignore if just paged and time interval is less than 0.3 seconds
-        if isScrolling && timeSinceLastScroll < 0.3 {
-            return
-        }
+        if isScrolling && timeSinceLastScroll < 0.3 { return }
         
         // Reset or continue accumulating scroll
-        if timeSinceLastScroll > 0.5 {
-            scrollAccumulator = 0.0
-        }
+        if timeSinceLastScroll > 0.5 { scrollAccumulator = 0.0 }
         
         // Accumulate horizontal scroll value
         scrollAccumulator += event.deltaX
@@ -861,7 +848,7 @@ struct AppIconView: View {
                         .frame(width: iconSize, height: iconSize)
                 } else {
                     Image(systemName: app.icon)
-                        .font(.system(size: iconSize * 0.4)) // 系统图标大小为图标尺寸的40%
+                        .font(.system(size: iconSize * 0.4)) // System icon size is 40% of icon size
                         .foregroundColor(.white)
                 }
             }
@@ -870,12 +857,12 @@ struct AppIconView: View {
             
             // Application name
             Text(app.name)
-                .font(.system(size: max(9, iconSize * 0.11), weight: .medium)) // 字体大小也动态调整
+                .font(.system(size: max(9, iconSize * 0.11), weight: .medium)) // Font size also adjusts dynamically
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .shadow(radius: 2)
-                .frame(width: iconSize * 0.8) // 文字宽度为图标宽度的80%
+                .frame(width: iconSize * 0.8) // Text width is 80% of icon width
         }
         .onHover { hovering in
             isHovered = hovering
@@ -891,38 +878,38 @@ class WallpaperCache {
     private let cacheDirectory: URL
     private let wallpaperKey = "current_wallpaper"
     
-    // 缓存统计
+    // Cache statistics
     private var cacheHits = 0
     private var cacheMisses = 0
     
-    // 当前壁纸的标识符
+    // Current wallpaper identifier
     private var currentWallpaperIdentifier: String?
     
     private init() {
         cache.countLimit = 5 // Cache up to 5 wallpapers
         cache.totalCostLimit = 100 * 1024 * 1024 // 100MB memory limit
         
-        // 创建缓存目录
+        // Create cache directory
         let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         cacheDirectory = appSupport.appendingPathComponent("Launchpad/WallpaperCache")
         
         try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         
-        // 初始化时设置当前壁纸标识符，避免首次启动时误判
+        // Set current wallpaper identifier on initialization to avoid misjudgment on first launch
         currentWallpaperIdentifier = generateWallpaperIdentifier()
     }
     
     func getWallpaper() -> NSImage? {
-        // 先从内存缓存获取
+        // Get from memory cache first
         if let cachedImage = cache.object(forKey: wallpaperKey as NSString) {
             cacheHits += 1
             return cachedImage
         }
         
-        // 从磁盘缓存获取
+        // Get from disk cache
         let cacheFile = cacheDirectory.appendingPathComponent("\(wallpaperKey).png")
         if let image = NSImage(contentsOf: cacheFile) {
-            // 加载到内存缓存
+            // Load to memory cache
             cache.setObject(image, forKey: wallpaperKey as NSString)
             cacheHits += 1
             return image
@@ -933,10 +920,10 @@ class WallpaperCache {
     }
     
     func setWallpaper(_ image: NSImage) {
-        // 保存到内存缓存
+        // Save to memory cache
         cache.setObject(image, forKey: wallpaperKey as NSString)
         
-        // 保存到磁盘缓存
+        // Save to disk cache
         let cacheFile = cacheDirectory.appendingPathComponent("\(wallpaperKey).png")
         if let tiffData = image.tiffRepresentation,
            let bitmapImage = NSBitmapImageRep(data: tiffData),
@@ -952,9 +939,7 @@ class WallpaperCache {
     }
     
     func getCacheSize() -> Int64 {
-        guard let enumerator = fileManager.enumerator(at: cacheDirectory, includingPropertiesForKeys: [.fileSizeKey]) else {
-            return 0
-        }
+        guard let enumerator = fileManager.enumerator(at: cacheDirectory, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
         
         var totalSize: Int64 = 0
         for case let fileURL as URL in enumerator {
@@ -973,19 +958,17 @@ class WallpaperCache {
     }
     
     func generateWallpaperIdentifier() -> String? {
-        guard let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: NSScreen.main!) else {
-            return nil
-        }
+        guard let wallpaperURL = NSWorkspace.shared.desktopImageURL(for: NSScreen.main!) else { return nil }
         
         do {
             let attributes = try fileManager.attributesOfItem(atPath: wallpaperURL.path)
             if let modificationDate = attributes[.modificationDate] as? Date,
                let fileSize = attributes[.size] as? Int64 {
-                // 使用文件修改时间和大小生成标识符
+                // Generate identifier using file modification time and size
                 return "wallpaper_\(Int(modificationDate.timeIntervalSince1970))_\(fileSize)"
             }
         } catch {
-            // 如果无法获取文件属性，使用文件路径作为标识符
+            // If unable to get file attributes, use file path as identifier
             return "wallpaper_\(wallpaperURL.lastPathComponent)"
         }
         
@@ -993,16 +976,16 @@ class WallpaperCache {
     }
     
     func shouldUpdateCache() -> Bool {
-        // 如果还没有当前标识符，说明是首次启动，不应该清除缓存
+        // If there's no current identifier, it's the first launch, shouldn't clear cache
         guard let currentIdentifier = currentWallpaperIdentifier else {
-            // 首次启动时，设置当前标识符但不清除缓存
+            // On first launch, set current identifier but don't clear cache
             currentWallpaperIdentifier = generateWallpaperIdentifier()
             return false
         }
         
         let newIdentifier = generateWallpaperIdentifier()
         if newIdentifier != currentIdentifier {
-            print("🔄 壁纸标识符变化: \(currentIdentifier) -> \(newIdentifier ?? "nil")")
+            print("🔄 Wallpaper identifier changed: \(currentIdentifier) -> \(newIdentifier ?? "nil")")
             currentWallpaperIdentifier = newIdentifier
             return true
         }
