@@ -4,12 +4,6 @@
 ## Screenshots
 ![Launchpad Screenshot](img/demo.png)
 
-## Features
-- Intuitive app launching interface
-- Customizable app grid layout
-- Easy app management
-- Beautiful wallpaper background support
-
 ## Todo
 - Long press to delete apps
 - Adjust app range via drag and drop
