@@ -433,13 +433,35 @@ struct ContentView: View {
             // Wallpaper blur background
             WallpaperBackgroundView()
             
+            // Close button
+//            VStack {
+//                HStack {
+//                    Spacer()
+//                    Button(action: {
+//                        animateAndClose()
+//                    }) {
+//                        Image(systemName: "xmark.circle.fill")
+//                            .font(.system(size: 24))
+//                            .foregroundColor(.white.opacity(0.8))
+//                            .background(
+//                                Circle()
+//                                    .fill(Color.black.opacity(0.3))
+//                                    .frame(width: 32, height: 32)
+//                            )
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
+//                    .padding(.trailing, 20)
+//                    .padding(.top, 20)
+//                }
+//                Spacer()
+//            }
+            
             VStack(spacing: 0) {
                 // Top toolbar
                 HStack {
                     // Top search bar
-                    Spacer()
                     searchBar.safeAreaPadding(.top).padding(.vertical, 10)
-                    Spacer()
+                    
                     // Settings button
 //                    Button(action: {
 //                        showingSettings = true
@@ -473,11 +495,7 @@ struct ContentView: View {
 
                 // Page indicator
                 if !appManager.isLoading && !filteredApps.isEmpty {
-                    HStack {
-                        Spacer()
-                        pageIndicator
-                        Spacer()
-                    }
+                    pageIndicator
                 }
                 Spacer()
             }

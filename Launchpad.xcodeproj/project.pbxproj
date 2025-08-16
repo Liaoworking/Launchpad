@@ -6,17 +6,69 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0D5FA33C2E505EEB00B3A661 /* Pager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32A2E505EEB00B3A661 /* Pager.swift */; };
+		0D5FA33D2E505EEB00B3A661 /* Pager+Buildable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32B2E505EEB00B3A661 /* Pager+Buildable.swift */; };
+		0D5FA33E2E505EEB00B3A661 /* PagerContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32C2E505EEB00B3A661 /* PagerContent.swift */; };
+		0D5FA33F2E505EEB00B3A661 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA33A2E505EEB00B3A661 /* WindowManager.swift */; };
+		0D5FA3402E505EEB00B3A661 /* SwipeInteractionArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3272E505EEB00B3A661 /* SwipeInteractionArea.swift */; };
+		0D5FA3412E505EEB00B3A661 /* PagerContent+Buildable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32D2E505EEB00B3A661 /* PagerContent+Buildable.swift */; };
+		0D5FA3422E505EEB00B3A661 /* Page.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3292E505EEB00B3A661 /* Page.swift */; };
+		0D5FA3432E505EEB00B3A661 /* PositionAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3252E505EEB00B3A661 /* PositionAlignment.swift */; };
+		0D5FA3442E505EEB00B3A661 /* PageTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32F2E505EEB00B3A661 /* PageTransition.swift */; };
+		0D5FA3452E505EEB00B3A661 /* GesturePriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3222E505EEB00B3A661 /* GesturePriority.swift */; };
+		0D5FA3462E505EEB00B3A661 /* PagerContent+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA32E2E505EEB00B3A661 /* PagerContent+Helper.swift */; };
+		0D5FA3472E505EEB00B3A661 /* PagingAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3242E505EEB00B3A661 /* PagingAnimation.swift */; };
+		0D5FA3482E505EEB00B3A661 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3342E505EEB00B3A661 /* ContentView.swift */; };
+		0D5FA3492E505EEB00B3A661 /* View+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA31F2E505EEB00B3A661 /* View+Helper.swift */; };
+		0D5FA34A2E505EEB00B3A661 /* OnAnimationCompletedModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA31E2E505EEB00B3A661 /* OnAnimationCompletedModifier.swift */; };
+		0D5FA34B2E505EEB00B3A661 /* Buildable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA31C2E505EEB00B3A661 /* Buildable.swift */; };
+		0D5FA34C2E505EEB00B3A661 /* AppManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3322E505EEB00B3A661 /* AppManager.swift */; };
+		0D5FA34D2E505EEB00B3A661 /* LaunchpadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3382E505EEB00B3A661 /* LaunchpadApp.swift */; };
+		0D5FA34E2E505EEB00B3A661 /* ContentLoadingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3212E505EEB00B3A661 /* ContentLoadingPolicy.swift */; };
+		0D5FA34F2E505EEB00B3A661 /* PaginationSensitivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3232E505EEB00B3A661 /* PaginationSensitivity.swift */; };
+		0D5FA3502E505EEB00B3A661 /* SwipeDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3262E505EEB00B3A661 /* SwipeDirection.swift */; };
+		0D5FA3512E505EEB00B3A661 /* DraggableAppGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3362E505EEB00B3A661 /* DraggableAppGrid.swift */; };
+		0D5FA3522E505EEB00B3A661 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3392E505EEB00B3A661 /* SettingsView.swift */; };
+		0D5FA3532E505EEB00B3A661 /* CGPoint+Angle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA31D2E505EEB00B3A661 /* CGPoint+Angle.swift */; };
+		0D5FA3542E505EEB00B3A661 /* PageWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3302E505EEB00B3A661 /* PageWrapper.swift */; };
+		0D5FA3552E505EEB00B3A661 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FA3332E505EEB00B3A661 /* Assets.xcassets */; };
+		0D5FA3562E505EEB00B3A661 /* ContentView.swift.backup in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FA3352E505EEB00B3A661 /* ContentView.swift.backup */; };
+		0D5FA3592E505F1100B3A661 /* GestureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5FA3582E505F1100B3A661 /* GestureManager.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		0D5FA31C2E505EEB00B3A661 /* Buildable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buildable.swift; sourceTree = "<group>"; };
+		0D5FA31D2E505EEB00B3A661 /* CGPoint+Angle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGPoint+Angle.swift"; sourceTree = "<group>"; };
+		0D5FA31E2E505EEB00B3A661 /* OnAnimationCompletedModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnAnimationCompletedModifier.swift; sourceTree = "<group>"; };
+		0D5FA31F2E505EEB00B3A661 /* View+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Helper.swift"; sourceTree = "<group>"; };
+		0D5FA3212E505EEB00B3A661 /* ContentLoadingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentLoadingPolicy.swift; sourceTree = "<group>"; };
+		0D5FA3222E505EEB00B3A661 /* GesturePriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GesturePriority.swift; sourceTree = "<group>"; };
+		0D5FA3232E505EEB00B3A661 /* PaginationSensitivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationSensitivity.swift; sourceTree = "<group>"; };
+		0D5FA3242E505EEB00B3A661 /* PagingAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagingAnimation.swift; sourceTree = "<group>"; };
+		0D5FA3252E505EEB00B3A661 /* PositionAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionAlignment.swift; sourceTree = "<group>"; };
+		0D5FA3262E505EEB00B3A661 /* SwipeDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeDirection.swift; sourceTree = "<group>"; };
+		0D5FA3272E505EEB00B3A661 /* SwipeInteractionArea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeInteractionArea.swift; sourceTree = "<group>"; };
+		0D5FA3292E505EEB00B3A661 /* Page.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Page.swift; sourceTree = "<group>"; };
+		0D5FA32A2E505EEB00B3A661 /* Pager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pager.swift; sourceTree = "<group>"; };
+		0D5FA32B2E505EEB00B3A661 /* Pager+Buildable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Pager+Buildable.swift"; sourceTree = "<group>"; };
+		0D5FA32C2E505EEB00B3A661 /* PagerContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagerContent.swift; sourceTree = "<group>"; };
+		0D5FA32D2E505EEB00B3A661 /* PagerContent+Buildable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PagerContent+Buildable.swift"; sourceTree = "<group>"; };
+		0D5FA32E2E505EEB00B3A661 /* PagerContent+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PagerContent+Helper.swift"; sourceTree = "<group>"; };
+		0D5FA32F2E505EEB00B3A661 /* PageTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageTransition.swift; sourceTree = "<group>"; };
+		0D5FA3302E505EEB00B3A661 /* PageWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageWrapper.swift; sourceTree = "<group>"; };
+		0D5FA3322E505EEB00B3A661 /* AppManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppManager.swift; sourceTree = "<group>"; };
+		0D5FA3332E505EEB00B3A661 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0D5FA3342E505EEB00B3A661 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0D5FA3352E505EEB00B3A661 /* ContentView.swift.backup */ = {isa = PBXFileReference; lastKnownFileType = text; path = ContentView.swift.backup; sourceTree = "<group>"; };
+		0D5FA3362E505EEB00B3A661 /* DraggableAppGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableAppGrid.swift; sourceTree = "<group>"; };
+		0D5FA3372E505EEB00B3A661 /* Launchpad.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Launchpad.entitlements; sourceTree = "<group>"; };
+		0D5FA3382E505EEB00B3A661 /* LaunchpadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchpadApp.swift; sourceTree = "<group>"; };
+		0D5FA3392E505EEB00B3A661 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0D5FA33A2E505EEB00B3A661 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		0D5FA3582E505F1100B3A661 /* GestureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureManager.swift; sourceTree = "<group>"; };
 		0DCA6B052E4757B800D7A90C /* Launchpad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Launchpad.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		0DCA6B072E4757B800D7A90C /* Launchpad */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Launchpad;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0DCA6B022E4757B800D7A90C /* Frameworks */ = {
@@ -29,10 +81,78 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0D5FA3202E505EEB00B3A661 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				0D5FA31C2E505EEB00B3A661 /* Buildable.swift */,
+				0D5FA31D2E505EEB00B3A661 /* CGPoint+Angle.swift */,
+				0D5FA31E2E505EEB00B3A661 /* OnAnimationCompletedModifier.swift */,
+				0D5FA31F2E505EEB00B3A661 /* View+Helper.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		0D5FA3282E505EEB00B3A661 /* PageConfiguration */ = {
+			isa = PBXGroup;
+			children = (
+				0D5FA3212E505EEB00B3A661 /* ContentLoadingPolicy.swift */,
+				0D5FA3222E505EEB00B3A661 /* GesturePriority.swift */,
+				0D5FA3232E505EEB00B3A661 /* PaginationSensitivity.swift */,
+				0D5FA3242E505EEB00B3A661 /* PagingAnimation.swift */,
+				0D5FA3252E505EEB00B3A661 /* PositionAlignment.swift */,
+				0D5FA3262E505EEB00B3A661 /* SwipeDirection.swift */,
+				0D5FA3272E505EEB00B3A661 /* SwipeInteractionArea.swift */,
+			);
+			path = PageConfiguration;
+			sourceTree = "<group>";
+		};
+		0D5FA3312E505EEB00B3A661 /* SwiftUIPager */ = {
+			isa = PBXGroup;
+			children = (
+				0D5FA3202E505EEB00B3A661 /* Helpers */,
+				0D5FA3282E505EEB00B3A661 /* PageConfiguration */,
+				0D5FA3292E505EEB00B3A661 /* Page.swift */,
+				0D5FA32A2E505EEB00B3A661 /* Pager.swift */,
+				0D5FA32B2E505EEB00B3A661 /* Pager+Buildable.swift */,
+				0D5FA32C2E505EEB00B3A661 /* PagerContent.swift */,
+				0D5FA32D2E505EEB00B3A661 /* PagerContent+Buildable.swift */,
+				0D5FA32E2E505EEB00B3A661 /* PagerContent+Helper.swift */,
+				0D5FA32F2E505EEB00B3A661 /* PageTransition.swift */,
+				0D5FA3302E505EEB00B3A661 /* PageWrapper.swift */,
+			);
+			path = SwiftUIPager;
+			sourceTree = "<group>";
+		};
+		0D5FA33B2E505EEB00B3A661 /* Launchpad */ = {
+			isa = PBXGroup;
+			children = (
+				0D5FA3572E505F0400B3A661 /* Manager */,
+				0D5FA3312E505EEB00B3A661 /* SwiftUIPager */,
+				0D5FA3322E505EEB00B3A661 /* AppManager.swift */,
+				0D5FA3332E505EEB00B3A661 /* Assets.xcassets */,
+				0D5FA3342E505EEB00B3A661 /* ContentView.swift */,
+				0D5FA3352E505EEB00B3A661 /* ContentView.swift.backup */,
+				0D5FA3362E505EEB00B3A661 /* DraggableAppGrid.swift */,
+				0D5FA3372E505EEB00B3A661 /* Launchpad.entitlements */,
+				0D5FA3382E505EEB00B3A661 /* LaunchpadApp.swift */,
+				0D5FA3392E505EEB00B3A661 /* SettingsView.swift */,
+			);
+			path = Launchpad;
+			sourceTree = "<group>";
+		};
+		0D5FA3572E505F0400B3A661 /* Manager */ = {
+			isa = PBXGroup;
+			children = (
+				0D5FA33A2E505EEB00B3A661 /* WindowManager.swift */,
+				0D5FA3582E505F1100B3A661 /* GestureManager.swift */,
+			);
+			path = Manager;
+			sourceTree = "<group>";
+		};
 		0DCA6AFC2E4757B800D7A90C = {
 			isa = PBXGroup;
 			children = (
-				0DCA6B072E4757B800D7A90C /* Launchpad */,
+				0D5FA33B2E505EEB00B3A661 /* Launchpad */,
 				0DCA6B062E4757B800D7A90C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,9 +179,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				0DCA6B072E4757B800D7A90C /* Launchpad */,
 			);
 			name = Launchpad;
 			packageProductDependencies = (
@@ -109,6 +226,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D5FA3552E505EEB00B3A661 /* Assets.xcassets in Resources */,
+				0D5FA3562E505EEB00B3A661 /* ContentView.swift.backup in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +238,32 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D5FA33C2E505EEB00B3A661 /* Pager.swift in Sources */,
+				0D5FA33D2E505EEB00B3A661 /* Pager+Buildable.swift in Sources */,
+				0D5FA33E2E505EEB00B3A661 /* PagerContent.swift in Sources */,
+				0D5FA33F2E505EEB00B3A661 /* WindowManager.swift in Sources */,
+				0D5FA3402E505EEB00B3A661 /* SwipeInteractionArea.swift in Sources */,
+				0D5FA3412E505EEB00B3A661 /* PagerContent+Buildable.swift in Sources */,
+				0D5FA3422E505EEB00B3A661 /* Page.swift in Sources */,
+				0D5FA3432E505EEB00B3A661 /* PositionAlignment.swift in Sources */,
+				0D5FA3442E505EEB00B3A661 /* PageTransition.swift in Sources */,
+				0D5FA3452E505EEB00B3A661 /* GesturePriority.swift in Sources */,
+				0D5FA3462E505EEB00B3A661 /* PagerContent+Helper.swift in Sources */,
+				0D5FA3472E505EEB00B3A661 /* PagingAnimation.swift in Sources */,
+				0D5FA3482E505EEB00B3A661 /* ContentView.swift in Sources */,
+				0D5FA3492E505EEB00B3A661 /* View+Helper.swift in Sources */,
+				0D5FA34A2E505EEB00B3A661 /* OnAnimationCompletedModifier.swift in Sources */,
+				0D5FA34B2E505EEB00B3A661 /* Buildable.swift in Sources */,
+				0D5FA34C2E505EEB00B3A661 /* AppManager.swift in Sources */,
+				0D5FA34D2E505EEB00B3A661 /* LaunchpadApp.swift in Sources */,
+				0D5FA34E2E505EEB00B3A661 /* ContentLoadingPolicy.swift in Sources */,
+				0D5FA34F2E505EEB00B3A661 /* PaginationSensitivity.swift in Sources */,
+				0D5FA3502E505EEB00B3A661 /* SwipeDirection.swift in Sources */,
+				0D5FA3512E505EEB00B3A661 /* DraggableAppGrid.swift in Sources */,
+				0D5FA3522E505EEB00B3A661 /* SettingsView.swift in Sources */,
+				0D5FA3592E505F1100B3A661 /* GestureManager.swift in Sources */,
+				0D5FA3532E505EEB00B3A661 /* CGPoint+Angle.swift in Sources */,
+				0D5FA3542E505EEB00B3A661 /* PageWrapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +397,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YG9MC8D2BK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Launchpad;
@@ -260,7 +406,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.liaoworking.Launchpad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -278,6 +425,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YG9MC8D2BK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Launchpad;
@@ -286,7 +434,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.liaoworking.Launchpad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
