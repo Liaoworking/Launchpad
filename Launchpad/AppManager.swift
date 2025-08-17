@@ -11,6 +11,7 @@ import SwiftUI
 
 class AppManager: ObservableObject {
     @Published var installedApps: [AppItem] = []
+    @Published var launchpadItems: [LaunchpadItem] = [] // 新的统一数据源
     @Published var isLoading = false
     
     static let shared = AppManager()
@@ -22,32 +23,69 @@ class AppManager: ObservableObject {
     
     // MARK: - Cache Management
     private let cacheKey = "CachedInstalledApps"
+    private let launchpadCacheKey = "CachedLaunchpadItems" // 新的文件夹缓存key
     private let cacheExpirationKey = "CacheExpirationDate"
     private let cacheExpirationInterval: TimeInterval = 3600 // 1 hour cache expiration
     
     private func loadCachedApps() {
-        if let cachedData = UserDefaults.standard.data(forKey: cacheKey) {
+        let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date ?? Date.distantPast
+        let isExpired = Date().timeIntervalSince(expirationDate) >= cacheExpirationInterval
+        
+        // 尝试加载LaunchpadItem缓存
+        if let launchpadCachedData = UserDefaults.standard.data(forKey: launchpadCacheKey), !isExpired {
             do {
-                let cachedApps = try JSONDecoder().decode([AppItem].self, from: cachedData)
-                
-                // Check if cache is expired
-                let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date ?? Date.distantPast
-                if Date().timeIntervalSince(expirationDate) < cacheExpirationInterval {
-                    // Cache not expired, use directly
-                    DispatchQueue.main.async {
-                        self.installedApps = cachedApps
-                    }
-                    return
+                let cachedLaunchpadItems = try JSONDecoder().decode([LaunchpadItem].self, from: launchpadCachedData)
+                DispatchQueue.main.async {
+                    self.launchpadItems = cachedLaunchpadItems
+                    // 同时更新旧的installedApps以保持兼容性
+                    self.installedApps = self.extractAppsFromLaunchpadItems(cachedLaunchpadItems)
                 }
+                return
             } catch {
-                // Clear invalid cache
-                UserDefaults.standard.removeObject(forKey: cacheKey)
-                UserDefaults.standard.removeObject(forKey: cacheExpirationKey)
+                // 清除无效的LaunchpadItem缓存
+                UserDefaults.standard.removeObject(forKey: launchpadCacheKey)
             }
         }
         
-        // No cache or cache expired, load immediately
+        // 回退到旧的AppItem缓存
+        if let cachedData = UserDefaults.standard.data(forKey: cacheKey), !isExpired {
+            do {
+                let cachedApps = try JSONDecoder().decode([AppItem].self, from: cachedData)
+                DispatchQueue.main.async {
+                    self.installedApps = cachedApps
+                    // 将AppItem转换为LaunchpadItem
+                    self.launchpadItems = cachedApps.map { .app($0) }
+                }
+                return
+            } catch {
+                // 清除无效的AppItem缓存
+                UserDefaults.standard.removeObject(forKey: cacheKey)
+            }
+        }
+        
+        // 清除过期缓存
+        if isExpired {
+            UserDefaults.standard.removeObject(forKey: cacheKey)
+            UserDefaults.standard.removeObject(forKey: launchpadCacheKey)
+            UserDefaults.standard.removeObject(forKey: cacheExpirationKey)
+        }
+        
+        // 没有缓存或缓存过期，立即加载
         loadInstalledApps()
+    }
+    
+    // 从LaunchpadItem中提取所有AppItem
+    private func extractAppsFromLaunchpadItems(_ items: [LaunchpadItem]) -> [AppItem] {
+        var apps: [AppItem] = []
+        for item in items {
+            switch item {
+            case .app(let app):
+                apps.append(app)
+            case .folder(let folder):
+                apps.append(contentsOf: folder.apps)
+            }
+        }
+        return apps
     }
     
     private func saveAppsToCache(_ apps: [AppItem]) {
@@ -57,16 +95,25 @@ class AppManager: ObservableObject {
         }
     }
     
+    private func saveLaunchpadItemsToCache(_ items: [LaunchpadItem]) {
+        if let encodedData = try? JSONEncoder().encode(items) {
+            UserDefaults.standard.set(encodedData, forKey: launchpadCacheKey)
+            UserDefaults.standard.set(Date(), forKey: cacheExpirationKey)
+        }
+    }
+    
     func loadInstalledApps() {
         // If there's cached data, display it first
-        if !installedApps.isEmpty {
+        if !installedApps.isEmpty || !launchpadItems.isEmpty {
             // Refresh in background, don't show loading state
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                let apps = self?.scanInstalledApps() ?? []
+                let (apps, launchpadItems) = self?.scanInstalledAppsAndFolders() ?? ([], [])
                 
                 DispatchQueue.main.async {
                     self?.installedApps = apps
+                    self?.launchpadItems = launchpadItems
                     self?.saveAppsToCache(apps)
+                    self?.saveLaunchpadItemsToCache(launchpadItems)
                 }
             }
         } else {
@@ -74,12 +121,14 @@ class AppManager: ObservableObject {
             isLoading = true
             
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                let apps = self?.scanInstalledApps() ?? []
+                let (apps, launchpadItems) = self?.scanInstalledAppsAndFolders() ?? ([], [])
                 
                 DispatchQueue.main.async {
                     self?.installedApps = apps
+                    self?.launchpadItems = launchpadItems
                     self?.isLoading = false
                     self?.saveAppsToCache(apps)
+                    self?.saveLaunchpadItemsToCache(launchpadItems)
                 }
             }
         }
@@ -87,17 +136,56 @@ class AppManager: ObservableObject {
     
     // Force refresh (clear cache)
     func forceRefreshApps() {
+        // 清除所有缓存
+        UserDefaults.standard.removeObject(forKey: cacheKey)
+        UserDefaults.standard.removeObject(forKey: launchpadCacheKey)
+        UserDefaults.standard.removeObject(forKey: cacheExpirationKey)
+        
         isLoading = true
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let apps = self?.scanInstalledApps() ?? []
+            let (apps, launchpadItems) = self?.scanInstalledAppsAndFolders() ?? ([], [])
             
             DispatchQueue.main.async {
                 self?.installedApps = apps
+                self?.launchpadItems = launchpadItems
                 self?.isLoading = false
                 self?.saveAppsToCache(apps)
+                self?.saveLaunchpadItemsToCache(launchpadItems)
             }
         }
+    }
+    
+    // 新的扫描方法，支持文件夹结构
+    private func scanInstalledAppsAndFolders() -> ([AppItem], [LaunchpadItem]) {
+        var allApps: [AppItem] = []
+        var launchpadItems: [LaunchpadItem] = []
+        
+        // 扫描系统应用目录 (/System/Applications)
+        let systemApplicationsUrl = URL(fileURLWithPath: "/System/Applications")
+        let systemItems = loadApplicationsWithFolders(from: systemApplicationsUrl, isLoadingDirectory: true)
+        launchpadItems.append(contentsOf: systemItems)
+        
+        // 扫描用户安装的应用目录 (/Applications)
+        let applicationUrl = URL(fileURLWithPath: "/Applications")
+        let userItems = loadApplicationsWithFolders(from: applicationUrl, isLoadingDirectory: true)
+        launchpadItems.append(contentsOf: userItems)
+        
+        // 扫描用户主目录的Applications目录（如果存在）
+        if let userApplicationsPath = getUserApplicationsPath() {
+            let userApplicationUrl = URL(fileURLWithPath: userApplicationsPath)
+            let homeItems = loadApplicationsWithFolders(from: userApplicationUrl, isLoadingDirectory: true)
+            launchpadItems.append(contentsOf: homeItems)
+        }
+        
+        // 提取所有应用用于兼容性
+        allApps = extractAppsFromLaunchpadItems(launchpadItems)
+        
+        // 排序
+        allApps = allApps.sorted { $0.name < $1.name }
+        launchpadItems = launchpadItems.sorted { $0.name < $1.name }
+        
+        return (allApps, launchpadItems)
     }
     
     private func scanInstalledApps() -> [AppItem] {
@@ -135,6 +223,99 @@ class AppManager: ObservableObject {
             }
         }
         return nil
+    }
+    
+    // 支持文件夹结构的应用加载方法
+    private func loadApplicationsWithFolders(from folderUrl: URL, isLoadingDirectory: Bool) -> [LaunchpadItem] {
+        let fileManager = FileManager.default
+        var launchpadItems: [LaunchpadItem] = []
+        
+        do {
+            let resourceKeys: [URLResourceKey] = [.isApplicationKey, .isDirectoryKey]
+            guard let enumerator = fileManager.enumerator(at: folderUrl,
+                                                        includingPropertiesForKeys: resourceKeys,
+                                                        options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
+                                                        errorHandler: { url, error in
+                return true
+            }) else {
+                return []
+            }
+            
+            while let url = enumerator.nextObject() as? URL {
+                // 跳过隐藏文件和系统文件
+                let fileName = url.lastPathComponent
+                if fileName.hasPrefix(".") || fileName.hasPrefix("~") {
+                    continue
+                }
+                
+                if url.lastPathComponent.hasSuffix(".app") {
+                    if let appInfo = getAppInfo(from: url.path) {
+                        launchpadItems.append(.app(appInfo))
+                    }
+                    continue
+                }
+                
+                guard isLoadingDirectory else { continue }
+                let resourceValues = try url.resourceValues(forKeys: Set(resourceKeys))
+                if resourceValues.isDirectory == true {
+                    // 递归加载子文件夹中的应用
+                    let subItems = loadApplicationsWithFolders(from: url, isLoadingDirectory: false)
+                    if !subItems.isEmpty {
+                        // 只有当文件夹中有应用时才创建文件夹项目
+                        let folderApps = subItems.compactMap { item -> AppItem? in
+                            if case .app(let app) = item {
+                                return app
+                            }
+                            return nil
+                        }
+                        
+                        if !folderApps.isEmpty {
+                            let folderName = fileName
+                            let folderCategory = determineFolderCategory(folderName: folderName, apps: folderApps)
+                            let folder = FolderItem(
+                                name: folderName,
+                                category: folderCategory,
+                                apps: folderApps,
+                                folderPath: url.path
+                            )
+                            launchpadItems.append(.folder(folder))
+                        }
+                    }
+                }
+            }
+        } catch {
+            // 静默处理错误
+        }
+        
+        return launchpadItems
+    }
+    
+    // 根据文件夹名称和包含的应用确定文件夹分类
+    private func determineFolderCategory(folderName: String, apps: [AppItem]) -> String {
+        let lowercasedName = folderName.lowercased()
+        
+        // 基于文件夹名称的分类
+        if lowercasedName.contains("util") || lowercasedName.contains("tool") {
+            return "Utilities"
+        } else if lowercasedName.contains("game") || lowercasedName.contains("entertain") {
+            return "Entertainment"
+        } else if lowercasedName.contains("develop") || lowercasedName.contains("dev") || lowercasedName.contains("code") {
+            return "Development"
+        } else if lowercasedName.contains("product") || lowercasedName.contains("office") {
+            return "Productivity"
+        } else if lowercasedName.contains("system") {
+            return "System"
+        }
+        
+        // 基于文件夹中应用的主要分类
+        let categoryCount = Dictionary(grouping: apps, by: { $0.category })
+            .mapValues { $0.count }
+        
+        if let mostCommonCategory = categoryCount.max(by: { $0.value < $1.value })?.key {
+            return mostCommonCategory
+        }
+        
+        return "Utilities"
     }
     
     // Optimized application loading using FileManager enumerator

@@ -168,9 +168,7 @@ struct WallpaperBackgroundView: View {
             self.backgroundOpacity = self.settingsBackgroundOpacity
             self.isWallpaperReady = true
             self.isLoading = false
-            print("✅ Successfully loaded wallpaper from cache")
         } else {
-            print("⚠️ No wallpaper in cache, starting to capture new wallpaper")
             // If not in cache, start capturing immediately
             captureScreenBackground()
         }
@@ -187,7 +185,6 @@ struct WallpaperBackgroundView: View {
         
         // Only clear cache when it actually needs to be updated
         if WallpaperCache.shared.shouldUpdateCache() && isInitialized {
-            print("🔄 Wallpaper changed, clearing old cache")
             WallpaperCache.shared.clearCache()
         }
         
@@ -251,7 +248,6 @@ struct WallpaperBackgroundView: View {
                     self.backgroundImage = cachedImage
                     self.blurRadius = CGFloat(self.settingsBlurRadius)
                     self.backgroundOpacity = self.settingsBackgroundOpacity
-                    print("✅ Got wallpaper from cache during preload")
                 }
                 
                 // Display cached wallpaper immediately
@@ -363,7 +359,16 @@ struct ContentView: View {
             totalScrollPages = totalPages
         }
     }
+    @State private var filteredLaunchpadItems: [LaunchpadItem] = [] {
+        didSet {
+            let itemsPerPage = gridColumns * gridRows
+            let totalPages = max(1, (filteredLaunchpadItems.count + itemsPerPage - 1) / itemsPerPage)
+            totalScrollPages = totalPages
+        }
+    }
     @State private var appsOrder: [AppItem] = []
+    @State private var expandedFolder: FolderItem? = nil // 当前展开的文件夹
+    @State private var showingFolderModal = false // 是否显示文件夹模态
     @State private var draggedApp: AppItem?
     @State private var showingSettings = false
     @State private var isClosing = false
@@ -472,7 +477,7 @@ struct ContentView: View {
                     pagedAppGrid
 
                 // Page indicator
-                if !appManager.isLoading && !filteredApps.isEmpty {
+                if !appManager.isLoading && !filteredLaunchpadItems.isEmpty {
                     HStack {
                         Spacer()
                         pageIndicator
@@ -485,6 +490,23 @@ struct ContentView: View {
             .padding(.top, 20)
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
+            }
+            
+            // 文件夹展开模态视图
+            if showingFolderModal, let folder = expandedFolder {
+                FolderExpandedView(
+                    folder: folder,
+                    iconSize: iconSize,
+                    onAppTap: { app in
+                        launchApp(app)
+                        animateAndClose()
+                    },
+                    onDismiss: {
+                        showingFolderModal = false
+                        expandedFolder = nil
+                    }
+                )
+                .transition(.opacity)
             }
         }
         .scaleEffect(isClosing ? 0.8 : 1.0)
@@ -518,6 +540,9 @@ struct ContentView: View {
             filterApps()
         }
         .onChange(of: selectedCategory) { _, _ in
+            filterApps()
+        }
+        .onChange(of: appManager.launchpadItems) { _, _ in
             filterApps()
         }
         .onChange(of: appManager.installedApps) { _, _ in
@@ -621,34 +646,41 @@ struct ContentView: View {
     @StateObject var page: Page = .first()
     private var pagedAppGrid: some View {
         
-        let appsPerPage = gridColumns * gridRows
-        let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
+        let itemsPerPage = gridColumns * gridRows
+        let totalPages = max(1, (filteredLaunchpadItems.count + itemsPerPage - 1) / itemsPerPage)
         let items = Array(0..<totalPages)
 
         return Pager(page: page,
                      data: items,
                      id: \.self) { pageIndex in
-            let startIndex = pageIndex * appsPerPage
-            let endIndex = min(startIndex + appsPerPage, filteredApps.count)
-            let pageApps = Array(filteredApps[startIndex..<endIndex])
+            let startIndex = pageIndex * itemsPerPage
+            let endIndex = min(startIndex + itemsPerPage, filteredLaunchpadItems.count)
+            let pageItems = Array(filteredLaunchpadItems[startIndex..<endIndex])
             VStack(content: {
                 LazyVGrid(columns: columns, spacing: 30) {
-                    ForEach(pageApps) { app in
-                        AppIconView(app: app, iconSize: iconSize)
-                            .onTapGesture {
-                                animateAndClose { launchApp(app) }
-                            }
-                            .onDrag {
-                                draggedApp = app
-                                return NSItemProvider(object: app.name as NSString)
-                            }
-                            .onDrop(of: [.text], delegate: DropViewDelegate(
-                                item: app,
-                                appsOrder: $appsOrder,
-                                draggedApp: $draggedApp
-                            ))
-                            .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+                    ForEach(pageItems, id: \.id) { item in
+                        switch item {
+                        case .app(let app):
+                            AppIconView(app: app, iconSize: iconSize)
+                                .onTapGesture {
+                                    animateAndClose { launchApp(app) }
+                                }
+                                .onDrag {
+                                    draggedApp = app
+                                    return NSItemProvider(object: app.name as NSString)
+                                }
+                                .scaleEffect(draggedApp?.id == app.id ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 0.2), value: draggedApp?.id)
+                        case .folder(let folder):
+                            FolderIconView(
+                                folder: folder,
+                                iconSize: iconSize,
+                                onTap: { selectedFolder in
+                                    expandedFolder = selectedFolder
+                                    showingFolderModal = true
+                                }
+                            )
+                        }
                     }
                 }
                 Spacer()
@@ -658,8 +690,8 @@ struct ContentView: View {
     }
     
     private var pageIndicator: some View {
-        let appsPerPage = gridColumns * gridRows
-        let totalPages = max(1, (filteredApps.count + appsPerPage - 1) / appsPerPage)
+        let itemsPerPage = gridColumns * gridRows
+        let totalPages = max(1, (filteredLaunchpadItems.count + itemsPerPage - 1) / itemsPerPage)
         
         return HStack(spacing: 0) {
             ForEach(0..<totalPages, id: \.self) { pageIndex in
@@ -690,6 +722,25 @@ struct ContentView: View {
     }
     
     private func filterApps() {
+        // 过滤LaunchpadItem
+        filteredLaunchpadItems = appManager.launchpadItems.filter { item in
+            let matchesSearch = searchText.isEmpty || 
+                item.name.localizedCaseInsensitiveContains(searchText)
+            let matchesCategory = selectedCategory == "All" || 
+                item.category == selectedCategory
+            
+            // 对于文件夹，还需要检查文件夹内应用是否匹配搜索
+            if case .folder(let folder) = item, !searchText.isEmpty {
+                let folderAppsMatch = folder.apps.contains { app in
+                    app.name.localizedCaseInsensitiveContains(searchText)
+                }
+                return matchesSearch || folderAppsMatch
+            }
+            
+            return matchesSearch && matchesCategory
+        }
+        
+        // 为了兼容性，仍然维护filteredApps
         filteredApps = appManager.installedApps.filter { app in
             let matchesSearch = searchText.isEmpty || 
                 app.name.localizedCaseInsensitiveContains(searchText)
@@ -720,8 +771,8 @@ struct ContentView: View {
                 }
                 return nil
             } else if event.keyCode == 124 { // Right arrow key
-                let appsPerPage = self.gridColumns * self.gridRows
-                let totalPages = max(1, (self.filteredApps.count + appsPerPage - 1) / appsPerPage)
+                let itemsPerPage = self.gridColumns * self.gridRows
+                let totalPages = max(1, (self.filteredLaunchpadItems.count + itemsPerPage - 1) / itemsPerPage)
                 if self.currentPage < totalPages - 1 {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         self.page.update(.next)
@@ -791,6 +842,286 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             success?()
             windowManager.closeWindow()
+        }
+    }
+}
+
+// MARK: - Folder View Components
+
+struct FolderIconView: View {
+    let folder: FolderItem
+    let iconSize: CGFloat
+    let onTap: (FolderItem) -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // 文件夹图标 - 确保与AppIconView尺寸完全一致
+            ZStack {
+                // 文件夹背景
+                RoundedRectangle(cornerRadius: iconSize * 0.18)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: Color(red: 0.75, green: 0.78, blue: 0.82), location: 0.0),
+                                .init(color: Color(red: 0.65, green: 0.68, blue: 0.72), location: 0.3),
+                                .init(color: Color(red: 0.55, green: 0.58, blue: 0.65), location: 0.7),
+                                .init(color: Color(red: 0.45, green: 0.48, blue: 0.55), location: 1.0)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: iconSize, height: iconSize) // 确保与AppIconView相同
+                    .overlay(
+                        // 内阴影效果
+                        RoundedRectangle(cornerRadius: iconSize * 0.18)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.white.opacity(0.4),
+                                        Color.black.opacity(0.1)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 3)
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                
+                // 应用预览图标网格 - 紧凑布局
+                VStack(spacing: iconSize * 0.03) {
+                    HStack(spacing: iconSize * 0.03) {
+                        ForEach(0..<2, id: \.self) { index in
+                            if index < folder.previewIcons.count,
+                               let icon = folder.previewIcons[index] {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: iconSize * 0.30, height: iconSize * 0.30)
+                                    .clipShape(RoundedRectangle(cornerRadius: iconSize * 0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                                    )
+                            } else {
+                                // 占位图标
+                                RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                    .fill(Color.white.opacity(0.15))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                                    )
+                                    .frame(width: iconSize * 0.30, height: iconSize * 0.30)
+                            }
+                        }
+                    }
+                    
+                    HStack(spacing: iconSize * 0.03) {
+                        ForEach(2..<4, id: \.self) { index in
+                            if index < folder.previewIcons.count,
+                               let icon = folder.previewIcons[index] {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: iconSize * 0.30, height: iconSize * 0.30)
+                                    .clipShape(RoundedRectangle(cornerRadius: iconSize * 0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                                    )
+                            } else {
+                                // 占位图标
+                                RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                    .fill(Color.white.opacity(0.15))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: iconSize * 0.06)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                                    )
+                                    .frame(width: iconSize * 0.30, height: iconSize * 0.30)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(width: iconSize, height: iconSize) // 强制限制整体尺寸
+            .scaleEffect(isHovered ? 1.1 : 1.0) // 保持与AppIconView相同的悬停效果
+            .animation(.easeInOut(duration: 0.2), value: isHovered) // 保持与AppIconView相同的动画
+            .onTapGesture {
+                onTap(folder)
+            }
+            
+            // 文件夹名称 - 确保与AppIconView相同的布局
+            Text(folder.name)
+                .font(.system(size: max(9, iconSize * 0.11), weight: .medium)) // 与AppIconView相同
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .shadow(radius: 2) // 与AppIconView相同
+                .frame(width: iconSize * 0.8) // 与AppIconView相同
+        }
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+// MARK: - Folder Expanded View (Modal)
+struct FolderExpandedView: View {
+    let folder: FolderItem
+    let iconSize: CGFloat
+    let onAppTap: (AppItem) -> Void
+    let onDismiss: () -> Void
+    @State private var isClosing = false
+    @State private var scale: CGFloat = 0.8
+    @State private var opacity: Double = 0.0
+    @State private var backgroundOpacity: Double = 0.0
+    
+    private let columns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 20), count: 6)
+    
+    var body: some View {
+        ZStack {
+            // 明显的背景蒙层 - 点击关闭
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(backgroundOpacity * 0.8),
+                            Color.black.opacity(backgroundOpacity * 0.6),
+                            Color.black.opacity(backgroundOpacity * 0.8)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .ignoresSafeArea()
+                .background(
+                    // 毛玻璃效果增强
+                    Rectangle()
+                        .fill(.regularMaterial)
+                        .opacity(backgroundOpacity * 0.5)
+                        .ignoresSafeArea()
+                )
+                .onTapGesture {
+                    dismissFolder()
+                }
+            
+            // 文件夹内容容器
+            VStack(spacing: 25) {
+                // 文件夹标题区域
+                VStack(spacing: 8) {
+                    // 文件夹图标（小版本）
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color(red: 0.75, green: 0.78, blue: 0.82), location: 0.0),
+                                        .init(color: Color(red: 0.55, green: 0.58, blue: 0.65), location: 1.0)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 48, height: 48)
+                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                        
+                        // 简化的预览图标
+                        VStack(spacing: 2) {
+                            HStack(spacing: 2) {
+                                ForEach(0..<2, id: \.self) { index in
+                                    if index < folder.previewIcons.count,
+                                       let icon = folder.previewIcons[index] {
+                                        Image(nsImage: icon)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 16, height: 16)
+                                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(Color.white.opacity(0.15))
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
+                            }
+                            HStack(spacing: 2) {
+                                ForEach(2..<4, id: \.self) { index in
+                                    if index < folder.previewIcons.count,
+                                       let icon = folder.previewIcons[index] {
+                                        Image(nsImage: icon)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 16, height: 16)
+                                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(Color.white.opacity(0.15))
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 文件夹标题
+                    Text(folder.name)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                    
+                    // 应用数量
+                    Text("\(folder.apps.count) 个应用")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .shadow(color: .black.opacity(0.6), radius: 1, x: 0, y: 1)
+                }
+                
+                // 应用网格
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 15) {
+                        ForEach(folder.apps) { app in
+                            AppIconView(app: app, iconSize: iconSize * 0.85)
+                                .onTapGesture {
+                                    onAppTap(app)
+                                    dismissFolder()
+                                }
+                                .scaleEffect(0.95)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: app.id)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                }
+                .frame(maxHeight: 600) // 限制高度，启用滚动
+            }
+            .padding(50)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            // 防止应用网格区域触发蒙层关闭
+            .onTapGesture {
+                // 空实现，阻止事件冒泡到蒙层
+                dismissFolder()
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                scale = 1.0
+                opacity = 1.0
+                backgroundOpacity = 1.0
+            }
+        }
+    }
+    
+    private func dismissFolder() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            scale = 0.8
+            opacity = 0.0
+            backgroundOpacity = 0.0
+            isClosing = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onDismiss()
         }
     }
 }
@@ -1002,6 +1333,70 @@ class IconCache {
     
     func clearCache() {
         cache.removeAllObjects()
+    }
+}
+
+// MARK: - Launchpad Data Models
+
+// 统一的启动台项目类型，可以是应用或文件夹
+enum LaunchpadItem: Identifiable, Equatable, Codable {
+    case app(AppItem)
+    case folder(FolderItem)
+    
+    var id: UUID {
+        switch self {
+        case .app(let app):
+            return app.id
+        case .folder(let folder):
+            return folder.id
+        }
+    }
+    
+    var name: String {
+        switch self {
+        case .app(let app):
+            return app.name
+        case .folder(let folder):
+            return folder.name
+        }
+    }
+    
+    var category: String {
+        switch self {
+        case .app(let app):
+            return app.category
+        case .folder(let folder):
+            return folder.category
+        }
+    }
+    
+    static func == (lhs: LaunchpadItem, rhs: LaunchpadItem) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+// 文件夹项目
+struct FolderItem: Identifiable, Equatable, Codable {
+    var id = UUID()
+    let name: String
+    let category: String
+    let apps: [AppItem]
+    let folderPath: String? // 文件夹在文件系统中的路径
+    
+    init(name: String, category: String, apps: [AppItem], folderPath: String? = nil) {
+        self.name = name
+        self.category = category
+        self.apps = apps
+        self.folderPath = folderPath
+    }
+    
+    // 获取文件夹预览图标（前4个应用的图标）
+    var previewIcons: [NSImage?] {
+        return Array(apps.prefix(4)).map { $0.image }
+    }
+    
+    static func == (lhs: FolderItem, rhs: FolderItem) -> Bool {
+        return lhs.id == rhs.id
     }
 }
 
